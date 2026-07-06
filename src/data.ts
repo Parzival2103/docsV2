@@ -6,6 +6,7 @@ export const NAVIGATION: DocSection[] = [
     items: [
       { id: "introduccion", title: "Introducción" },
       { id: "inicio-rapido", title: "Guía de inicio rápido" },
+      { id: "sandbox", title: "Sandbox demo (5 min)" },
     ]
   },
   {
@@ -46,13 +47,20 @@ En lugar de lidiar con webhooks complejos, verificaciones de negocio engorrosas 
 ¿Listo para empezar? Avanza a la **Guía de inicio rápido**.
 `
   },
+  "sandbox": {
+    id: "sandbox",
+    title: "Sandbox demo",
+    markdown: "",
+  },
   "inicio-rapido": {
     id: "inicio-rapido",
     title: "Guía de inicio rápido",
     markdown: `
 # Guía de inicio rápido
 
-Integrar WhatsApp en tu sistema no tiene por qué ser un dolor de cabeza. En esta guía, te llevaremos de la mano para que envíes tu primer mensaje en 5 pasos sencillos. 
+Integrar WhatsApp en tu sistema no tiene por qué ser un dolor de cabeza. En esta guía, te llevaremos de la mano para que envíes tu primer mensaje en 5 pasos sencillos.
+
+> 🚀 **¿Recibiste el correo demo?** Usa el **[Sandbox interactivo](/#sandbox)** en esta misma documentación: pega tu token, escanea el QR y envía un WhatsApp en menos de 5 minutos — sin escribir código.
 
 ¡Comencemos!
 

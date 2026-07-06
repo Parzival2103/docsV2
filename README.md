@@ -1,20 +1,50 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# docs.lebytek.com (docsV2)
 
-# Run and deploy your AI Studio app
+Documentación pública de **Lebytek API** — MVP WhatsApp en `api.lebytek.com`.
 
-This contains everything you need to run your app locally.
+Sitio estático SPA (React + Vite + Tailwind). El contenido vive en `src/data.ts`.
 
-View your app in AI Studio: https://ai.studio/apps/1126f037-98a2-46b4-b531-eee50ccd392a
+## Desarrollo local
 
-## Run Locally
+```bash
+npm install
+npm run dev
+```
 
-**Prerequisites:**  Node.js
+Abrir: http://localhost:3000
 
+No requiere `GEMINI_API_KEY` para desarrollo ni producción (dependencia legacy del template AI Studio).
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## Build producción
+
+```bash
+npm run build
+npm run preview   # opcional, ver dist en :4173
+```
+
+Salida: `dist/` (servir como estáticos).
+
+## Estructura
+
+```
+src/data.ts          Contenido markdown por sección
+src/components/      Sidebar, DocViewer (copiar código)
+public/assets/docs/  Capturas (placeholders referenciados en data.ts)
+```
+
+## Secciones (MVP API)
+
+- **Primeros Pasos:** Introducción, Guía de inicio rápido
+- **Referencia API:** Autenticación, Tenants, Instancias, Mensajes
+
+Framework, portal waapi y tenants a medida: iteración posterior.
+
+## Deploy
+
+Ver [DEPLOY.md](DEPLOY.md).
+
+## Repo anterior (Docsify)
+
+El sitio Docsify multi-sección (`api/`, `framework/`, `tenants/`) quedó respaldado en el VPS en `/home/lebytek-docs/backups/`.
+
+Repositorio legacy local: `docs.lebytek.com` (sibling en Desktop/sistemas).
