@@ -19,6 +19,7 @@ import {
   type InstanceResource,
   type MessageResource,
 } from '../../lib/lebytekApi';
+import TokenPasteField from './TokenPasteField';
 
 const STORAGE_KEY = 'lebytek_sandbox_token_v1';
 const QR_COOLDOWN_MS = 5000;
@@ -183,8 +184,8 @@ export default function DemoSandbox() {
           Prueba tu demo en 5 minutos
         </h1>
         <p className="mt-2 text-slate-600">
-          Pega el token del <strong>segundo correo</strong>, vincula WhatsApp y envía tu primer mensaje.
-          Tu token permanece en esta pestaña (sessionStorage); no pasa por nuestros servidores.
+          Pega el token del <strong>segundo correo</strong> (formato <code className="font-mono text-sm">15|…</code>),
+          vincula WhatsApp y envía tu primer mensaje. El token queda en esta pestaña (sessionStorage).
         </p>
       </div>
 
@@ -204,21 +205,14 @@ export default function DemoSandbox() {
 
       {step === 'token' && (
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
-          <label className="block text-sm font-medium text-slate-700" htmlFor="demo-token">
-            Token del correo demo (Bearer)
-          </label>
-          <textarea
+          <TokenPasteField
             id="demo-token"
-            className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm min-h-[88px] focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
-            placeholder="Pega aquí el token que recibiste por correo…"
             value={token}
-            onChange={(e) => setToken(e.target.value)}
-            autoComplete="off"
-            spellCheck={false}
+            onChange={setToken}
+            disabled={loading}
           />
           <p className="text-xs text-slate-500">
-            Pega el token <strong>completo</strong> del correo (ej. <code className="font-mono">15|abc…</code>).
-            Permisos: instancias.ver, mensajes.enviar, mensajes.ver. No compartas este token.
+            Permisos incluidos: instancias.ver, mensajes.enviar, mensajes.ver. No compartas este token.
           </p>
           <button
             type="button"
