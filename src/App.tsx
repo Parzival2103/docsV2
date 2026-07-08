@@ -70,7 +70,7 @@ export default function App() {
           </div>
 
           <div className="flex items-center gap-4">
-            <a href="https://api.lebytek.com/docs" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
+            <a href="#introduccion" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
               Ir al Dashboard
             </a>
           </div>
