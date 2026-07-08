@@ -1,0 +1,19 @@
+# no-mistakes repo config — docsV2 (React + Vite + TypeScript)
+# Commands are read from the default branch (main) for security.
+# See: https://kunchenguid.github.io/no-mistakes/reference/repo-config/
+
+commands:
+  lint: "npm run lint"
+  test: "npm run build"
+
+ignore_patterns:
+  - "node_modules/**"
+  - "dist/**"
+  - "docs-backup-*/**"
+  - "*.log"
+  - "package-lock.json"
+
+auto_fix:
+  lint: 3
+  test: 3
+  document: 3
