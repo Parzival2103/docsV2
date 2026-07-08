@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Search, Github } from 'lucide-react';
+import { Menu, Search } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import DocViewer from './components/DocViewer';
 import DemoSandbox from './components/Sandbox/DemoSandbox';
@@ -72,10 +72,6 @@ export default function App() {
           <div className="flex items-center gap-4">
             <a href="https://api.lebytek.com/docs" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-slate-600 hover:text-indigo-600 transition-colors">
               Ir al Dashboard
-            </a>
-            <div className="h-4 w-px bg-slate-200"></div>
-            <a href="https://github.com/Parzival2103/docsV2" target="_blank" rel="noopener noreferrer" className="text-slate-400 hover:text-slate-900 transition-colors">
-              <Github className="w-5 h-5" />
             </a>
           </div>
         </header>

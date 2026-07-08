@@ -13,9 +13,9 @@ export const NAVIGATION: DocSection[] = [
     title: "Referencia API",
     items: [
       { id: "autenticacion", title: "Autenticación", isApiRef: true },
-      { id: "tenants", title: "Tenants", isApiRef: true },
       { id: "instancias", title: "Instancias", isApiRef: true },
       { id: "mensajes", title: "Mensajes", isApiRef: true },
+      { id: "errores", title: "Errores comunes", isApiRef: true },
     ]
   }
 ];
@@ -27,30 +27,59 @@ export const DOCS_DATABASE: Record<string, DocContent> = {
     markdown: `
 # Introducción a la API de Lebytek
 
-Bienvenido a la documentación oficial de **Lebytek**. Nuestra API está diseñada para ser el intermediario perfecto entre clientes, integradores y WhatsApp. Si alguna vez has intentado conectar tu software directamente con la API de WhatsApp, sabes que puede ser un proceso largo, técnico y lleno de requisitos de aprobación. Nosotros simplificamos todo eso.
+La API de **Lebytek** te permite enviar mensajes de WhatsApp desde tu propio sistema usando una URL y un token de acceso.
+
+Está pensada para negocios, desarrolladores e integradores que quieren automatizar confirmaciones, recordatorios, avisos, promociones o notificaciones sin construir una solución de mensajería desde cero.
 
 ## ¿Para quién es esta API?
 
-La API de Lebytek está construida pensando en:
-- **Desarrolladores e integradores** que quieren añadir capacidades de mensajería de WhatsApp a sus aplicaciones (CRM, ERP, sistemas de tickets) en cuestión de minutos, no de semanas.
-- **Agencias SaaS** que necesitan gestionar múltiples cuentas de clientes bajo un mismo paraguas, de forma ordenada y aislada.
+La API de Lebytek es útil para:
+
+- **Sistemas internos** que necesitan enviar avisos automáticos por WhatsApp.
+- **CRMs, ERPs o paneles administrativos** que quieren agregar notificaciones a clientes.
+- **Negocios con procesos repetitivos**, como confirmaciones, cobranza, citas, recordatorios o seguimiento de ventas.
+- **Equipos técnicos** que buscan una integración simple basada en peticiones HTTP.
 
 ## ¿Qué resuelve?
 
-En lugar de lidiar con webhooks complejos, verificaciones de negocio engorrosas y largos tiempos de espera, nosotros te entregamos una conexión limpia. Podrás provisionar cuentas (tenants), crear instancias (líneas conectadas), escanear un código QR como si fuera WhatsApp Web y empezar a enviar y recibir mensajes inmediatamente. El cliente NUNCA llama a proveedores subyacentes (como Green API) directamente; todo pasa por nuestra infraestructura en \`api.lebytek.com\`.
+Con Lebytek puedes conectar una instancia de WhatsApp a tu sistema y enviar mensajes desde tus propios flujos.
 
-> 💡 **Tip:** Si quieres explorar la API de forma interactiva y probar los endpoints directamente en el navegador, visita nuestra [Documentación OpenAPI (Swagger)](https://api.lebytek.com/docs).
+En lugar de depender de mensajes manuales, copiados o enviados uno por uno, puedes automatizar comunicaciones importantes desde tu aplicación.
 
-![Placeholder: Arquitectura de conexión de Lebytek](/assets/docs/arquitectura-lebytek.png)
+Ejemplos de uso:
+
+- Confirmación de citas o reservas.
+- Recordatorios de pago.
+- Avisos de seguimiento.
+- Notificaciones internas.
+- Mensajes transaccionales.
+- Promociones o campañas autorizadas.
+
+## ¿Cómo funciona?
+
+1. Lebytek activa tu instancia.
+2. Recibes tus credenciales de acceso.
+3. Conectas tu sistema mediante URL y token.
+4. Realizas peticiones HTTP para enviar mensajes.
+5. Consultas el estado de tus mensajes cuando lo necesites.
+
+> 💡 **Tip:** Si recibiste una demo, puedes usar el Sandbox para probar tu token y enviar un mensaje de prueba antes de integrar la API en tu sistema.
 
 ### ¿Qué sigue?
-¿Listo para empezar? Avanza a la **Guía de inicio rápido**.
+
+Avanza a la **Guía de inicio rápido** para enviar tu primer mensaje.
 `
   },
   "sandbox": {
     id: "sandbox",
     title: "Sandbox demo",
-    markdown: "",
+    markdown: `
+# Sandbox demo
+
+Usa esta sección para probar tu token, validar tu instancia y enviar un mensaje de prueba.
+
+> Esta demo está pensada para ayudarte a comprobar que tus credenciales funcionan antes de integrar la API en tu sistema.
+`
   },
   "inicio-rapido": {
     id: "inicio-rapido",
@@ -58,66 +87,105 @@ En lugar de lidiar con webhooks complejos, verificaciones de negocio engorrosas 
     markdown: `
 # Guía de inicio rápido
 
-Integrar WhatsApp en tu sistema no tiene por qué ser un dolor de cabeza. En esta guía, te llevaremos de la mano para que envíes tu primer mensaje en 5 pasos sencillos.
+Esta guía te ayuda a validar tu acceso y enviar tu primer mensaje por WhatsApp usando la API de Lebytek.
 
-> 🚀 **¿Recibiste el correo demo?** Usa el **[Sandbox interactivo](/#sandbox)** en esta misma documentación: pega tu token, escanea el QR y envía un WhatsApp en menos de 5 minutos — sin escribir código.
-
-¡Comencemos!
+> 🚀 **¿Recibiste una demo?** Ten a la mano la URL base, tu token y el identificador de tu instancia.
 
 ---
 
-## 1. Obtener tu token de acceso
+## 1. Recibir tus credenciales
 
-Para que podamos reconocerte, necesitas una "llave" de acceso. 
-- Si eres un **integrador**, recibirás un Token de Plataforma en tu panel de control.
-- Si eres un **cliente final**, recibirás un Token por-tenant por correo electrónico (o a través del software de tu integrador).
+Al activar tu instancia recibirás los datos necesarios para conectarte a la API:
 
-Este token debe ir en todas las peticiones que le hagas a la API en el header \`Authorization\`.
+- URL base de la API.
+- Token de acceso.
+- Identificador público de instancia.
 
-> ℹ️ **Ojo:** Guarda tu token en un lugar seguro. ¡No lo expongas en código público ni lo compartas!
+Guarda estos datos en un lugar seguro. No los publiques en repositorios, capturas de pantalla, frontend público o canales no protegidos.
 
-## 2. Provisionar un tenant
+---
 
-*(Paso solo para integradores con Token de Plataforma).*
+## 2. Validar tu token
 
-En Lebytek, un **tenant** es una cuenta de cliente. Si estás construyendo un sistema para varias empresas, cada empresa debe tener su propio tenant. Esto mantiene la información y la facturación de cada uno totalmente aislada.
+Antes de enviar mensajes, puedes hacer una petición de verificación para confirmar que tu token está funcionando.
 
-Haz una petición \`POST /tenants\` para crear tu primer tenant y guarda el \`publicId\` (un código único ULID) que te devolveremos.
+**GET** \`/health\`
 
-## 3. Crear una instancia WhatsApp
+\`\`\`bash
+curl -X GET "https://api.lebytek.com/api/v1/health" \\
+  -H "Authorization: Bearer {token}" \\
+  -H "Accept: application/json"
+\`\`\`
 
-Una instancia es, en esencia, "una línea de WhatsApp conectada" que pertenece a un tenant. 
-Llama al endpoint \`POST /instances\` enviando en los headers el \`X-Tenant-Id\` para crear la instancia. Cuando se cree correctamente, pasará a un estado de provisionamiento y luego estará lista para vincularse.
+Si la respuesta es correcta, puedes continuar con la integración.
 
-## 4. Conectar escaneando el QR
+---
 
-Para autorizar la instancia, debes pedirle a nuestra API que genere un código QR haciendo un \`GET /instances/{publicId}/qr\`. 
+## 3. Revisar el estado de tu instancia
 
-Este código es igual al que ves cuando inicias sesión en WhatsApp Web. Abre la app de WhatsApp en el teléfono que quieres conectar, ve a "Dispositivos vinculados" y escanea la pantalla.
+Una instancia representa la línea de WhatsApp que se usará para enviar mensajes.
+
+**GET** \`/instances/{instancePublicId}\`
+
+\`\`\`bash
+curl -X GET "https://api.lebytek.com/api/v1/instances/{instancePublicId}" \\
+  -H "Authorization: Bearer {token}" \\
+  -H "Accept: application/json"
+\`\`\`
+
+La instancia debe estar conectada antes de enviar mensajes.
+
+---
+
+## 4. Conectar la instancia con QR
+
+Si tu instancia requiere vinculación, solicita el QR de conexión.
+
+**GET** \`/instances/{instancePublicId}/qr\`
+
+\`\`\`bash
+curl -X GET "https://api.lebytek.com/api/v1/instances/{instancePublicId}/qr" \\
+  -H "Authorization: Bearer {token}" \\
+  -H "Accept: application/json"
+\`\`\`
+
+Escanea el QR desde la aplicación de WhatsApp en el teléfono que deseas conectar.
 
 ![Placeholder: Pantalla QR para conectar WhatsApp](/assets/docs/qr-instancia.png)
 
-Una vez escaneado y procesado por nuestro sistema, la instancia cambiará su estado a \`authorized\`.
-
-![Placeholder: Estado de instancia authorized](/assets/docs/instancia-autorizada.png)
+---
 
 ## 5. Enviar tu primer mensaje
 
-¡Ya estás conectado! Ahora puedes usar el endpoint \`POST /messages\` para enviarte un mensaje de prueba a ti mismo o a cualquier otro número.
+Cuando la instancia esté conectada, puedes enviar un mensaje de prueba.
 
-![Placeholder: Respuesta de mensaje enviado](/assets/docs/mensaje-enviado.png)
+**POST** \`/messages\`
+
+\`\`\`bash
+curl -X POST "https://api.lebytek.com/api/v1/messages" \\
+  -H "Authorization: Bearer {token}" \\
+  -H "Accept: application/json" \\
+  -H "Content-Type: application/json" \\
+  -H "Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000" \\
+  -d '{
+    "recipient": "5215512345678",
+    "body": "Hola desde Lebytek API",
+    "instancePublicId": "{instancePublicId}"
+  }'
+\`\`\`
 
 ---
 
 ## Problemas frecuentes
 
-- **Mi token dice que es inválido (Error 401):** Verifica que estás enviando el token en el formato correcto en las cabeceras HTTP: \`Authorization: Bearer {tu_token}\`. Revisa que no se haya copiado con espacios extra.
-- **La instancia aparece sin autorizar (Error 422):** Si intentas enviar un mensaje, asegúrate de que el estado de la instancia sea \`authorized\`.
-- **El QR me dice que ha expirado:** Los códigos QR de WhatsApp caducan muy rápido. Vuelve a llamar al endpoint del QR para generar uno nuevo e inténtalo otra vez inmediatamente.
-- **Error 429 (Too Many Requests):** La API tiene un límite (Rate limit) de 60 solicitudes por minuto. Si lo superas, deberás esperar un poco.
+- **Token inválido:** Revisa que el header tenga el formato \`Authorization: Bearer {token}\`.
+- **Instancia no conectada:** Verifica el estado de la instancia antes de enviar mensajes.
+- **QR expirado:** Genera un nuevo QR e intenta escanearlo nuevamente.
+- **Demasiadas solicitudes:** Reduce la frecuencia de peticiones o espera antes de reintentar.
 
 ### ¿Qué sigue?
-Ahora que ya enviaste tu primer mensaje, descubre cómo estructurar la seguridad de tu app en la sección de **Autenticación**.
+
+Consulta la sección de **Autenticación** para conocer los headers recomendados en tus peticiones.
 `
   },
   "autenticacion": {
@@ -126,276 +194,233 @@ Ahora que ya enviaste tu primer mensaje, descubre cómo estructurar la seguridad
     markdown: `
 # Autenticación
 
-Todas las peticiones a la API de Lebytek deben estar autenticadas. Utilizamos un esquema de autenticación basado en **Bearer Tokens** (vía Sanctum de Laravel).
+Todas las peticiones a la API de Lebytek requieren autenticación mediante **Bearer Token**.
 
-Existen dos niveles de tokens que determinan a qué datos tienes acceso.
+El token será entregado al activar tu instancia y debe enviarse en cada petición dentro del header \`Authorization\`.
 
-## Tipos de Token
+## Header de autenticación
 
-| | Token plataforma | Token por-tenant |
-| :--- | :--- | :--- |
-| **Quién lo usa** | Integrador / back-office | Cliente final |
-| **Emisión** | \`php artisan integration:issue-waapi-token\` | \`POST /tenants/{publicId}/tokens\` |
-| **Alcance** | Todos los tenants | Solo su tenant |
-| **Header** | \`Authorization: Bearer {token}\` | \`Authorization: Bearer {token}\` |
+\`\`\`http
+Authorization: Bearer {token}
+\`\`\`
 
-> ℹ️ **Ojo:** El token por-tenant se muestra una sola vez al crearlo. Guárdalo de inmediato, no podrás volver a verlo.
+## Headers recomendados
 
-## Headers Obligatorios
-
-Todas tus peticiones deben incluir los siguientes headers HTTP para garantizar que la información se procese correctamente:
+Incluye estos headers para que tus peticiones se procesen correctamente:
 
 - \`Authorization: Bearer {token}\`
 - \`Accept: application/json\`
-- \`Content-Type: application/json\` (Obligatorio en peticiones POST, PUT o PATCH)
-- \`Idempotency-Key: {uuid-v4}\` (Obligatorio en peticiones POST/PATCH para evitar envíos duplicados)
-- \`X-Tenant-Id: {publicId}\` (Solo si usas un **Token de plataforma** en rutas que no tienen el tenant en la URL, para indicarnos sobre qué cliente estás operando).
+- \`Content-Type: application/json\` en peticiones \`POST\`, \`PUT\` o \`PATCH\`
+- \`Idempotency-Key: {uuid-v4}\` en peticiones de envío para evitar duplicados
 
-## Ejemplos de uso (cURL)
+## Seguridad del token
 
-**Ejemplo de una petición GET de verificación (Health check)**
+Tu token es privado y permite usar tu instancia de la API.
+
+No lo compartas en:
+
+- Repositorios públicos.
+- Frontend o JavaScript expuesto al navegador.
+- Capturas de pantalla.
+- Correos reenviados sin control.
+- Canales públicos o grupos abiertos.
+
+Si sospechas que tu token fue expuesto, solicita una regeneración de credenciales.
+
+## Ejemplo de verificación
+
 \`\`\`bash
 curl -X GET "https://api.lebytek.com/api/v1/health" \\
   -H "Authorization: Bearer {token}" \\
   -H "Accept: application/json"
 \`\`\`
 
-**Ejemplo de una petición POST con Idempotency-Key**
+## Ejemplo de envío con Idempotency-Key
+
 \`\`\`bash
-curl -X POST "https://api.lebytek.com/api/v1/tenants" \\
+curl -X POST "https://api.lebytek.com/api/v1/messages" \\
   -H "Authorization: Bearer {token}" \\
   -H "Accept: application/json" \\
   -H "Content-Type: application/json" \\
   -H "Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000" \\
-  -d '{"name": "Acme Corp", "slug": "acme-corp"}'
+  -d '{
+    "recipient": "5215512345678",
+    "body": "Hola desde Lebytek API",
+    "instancePublicId": "{instancePublicId}"
+  }'
 \`\`\`
-`
-  },
-  "tenants": {
-    id: "tenants",
-    title: "Tenants",
-    markdown: `
-# Gestión de Tenants
-
-Un **Tenant** representa a uno de tus clientes o empresas. Toda instancia y mensaje en Lebytek debe pertenecer obligatoriamente a un Tenant.
-
-## Crear un nuevo Tenant
-
-Crea un espacio de trabajo aislado para tu nuevo cliente. (Solo accesible con Token de plataforma).
-
-**POST** \`/tenants\`
-
-**Headers:**
-\`\`\`http
-Authorization: Bearer {token_plataforma}
-Accept: application/json
-Content-Type: application/json
-Idempotency-Key: {uuid-v4}
-\`\`\`
-
-**Body (JSON):**
-\`\`\`json
-{
-  "name": "Acme Corp",
-  "slug": "acme-corp",
-  "externalRef": "lead_42"
-}
-\`\`\`
-
-**Response (201 Created):**
-\`\`\`json
-{
-  "publicId": "01JXYZABCDEF1234567890",
-  "name": "Acme Corp",
-  "slug": "acme-corp",
-  "isActive": true,
-  "createdAt": "2026-07-04T10:00:00Z"
-}
-\`\`\`
-
-## Emitir un Token de Tenant
-
-Genera un token de acceso exclusivo para un Tenant específico para que tu cliente final pueda operar su propia cuenta sin ver los datos de los demás.
-
-**POST** \`/tenants/{publicId}/tokens\`
-
-**Headers:**
-\`\`\`http
-Authorization: Bearer {token_plataforma}
-Accept: application/json
-Content-Type: application/json
-Idempotency-Key: {uuid-v4}
-\`\`\`
-
-**Body (JSON):**
-\`\`\`json
-{
-  "name": "cliente-acme"
-}
-\`\`\`
-
-**Response (201 Created):**
-\`\`\`json
-{
-  "publicId": "01JXYZABC...",
-  "token": "12|abcdef1234567890...",
-  "name": "cliente-acme",
-  "createdAt": "2026-07-04T10:05:00Z"
-}
-\`\`\`
-
-## Consultar Tenant existente
-
-Obtén los detalles de un Tenant.
-
-**GET** \`/tenants/{publicId}\`
-
-**Headers:**
-\`\`\`http
-Authorization: Bearer {token_plataforma}
-Accept: application/json
-\`\`\`
-
-## Códigos de Error Frecuentes
-
-| Código HTTP | Causa probable |
-| :--- | :--- |
-| **401 Unauthorized** | Token ausente, inválido o expirado. |
-| **403 Forbidden** | Estás usando un token que no tiene permisos para crear Tenants. |
-| **404 Not Found** | El Tenant indicado en la URL no existe. |
-| **422 Unprocessable Entity** | Faltan campos requeridos o el \`slug\` ya está en uso (duplicado). |
 `
   },
   "instancias": {
     id: "instancias",
     title: "Instancias",
     markdown: `
-# Gestión de Instancias
+# Instancias
 
-Una instancia es el puente entre el Tenant y el dispositivo móvil con WhatsApp.
+Una instancia representa la línea de WhatsApp conectada a tu integración.
 
-## Crear una Instancia
+Cada mensaje enviado por la API debe indicar qué instancia se utilizará para realizar el envío.
 
-Inicializa un nuevo entorno de conexión para un Tenant.
+## Consultar una instancia
 
-**POST** \`/instances\`
+Utiliza este endpoint para revisar si tu instancia está lista para enviar mensajes.
+
+**GET** \`/instances/{instancePublicId}\`
 
 **Headers:**
+
 \`\`\`http
-Authorization: Bearer {token_plataforma}
+Authorization: Bearer {token}
 Accept: application/json
-Content-Type: application/json
-Idempotency-Key: {uuid-v4}
-X-Tenant-Id: {publicId}
 \`\`\`
 
-**Body (JSON):**
+**Respuesta de ejemplo:**
+
 \`\`\`json
 {
-  "label": "Demo Acme",
-  "externalRef": "lead_42_instance",
-  "purpose": "demo"
+  "id": "{instancePublicId}",
+  "label": "Mi instancia principal",
+  "status": "connected",
+  "createdAt": "2026-07-04T10:00:00Z"
 }
 \`\`\`
 
-**Response (202 Accepted):**
-La petición inicia el proceso de aprovisionamiento de manera asíncrona. Recibirás una respuesta indicando que la instancia está siendo creada.
+## Obtener QR de conexión
 
-## Obtener información de la Instancia
+Si tu instancia todavía no está conectada, puedes solicitar un QR para vincularla.
 
-Consulta el estado actual de la instancia. Los estados posibles son: \`provisioning\`, \`waiting_qr\`, \`authorized\`, o \`failed\`.
-
-**GET** \`/instances/{publicId}\`
-
-## Obtener el QR de conexión
-
-Devuelve el código QR necesario para vincular la aplicación de WhatsApp.
-
-**GET** \`/instances/{publicId}/qr\`
+**GET** \`/instances/{instancePublicId}/qr\`
 
 **Headers:**
+
 \`\`\`http
 Authorization: Bearer {token}
 Accept: application/json
 \`\`\`
 
-![Placeholder: Código QR en pantalla](/assets/docs/qr-code.png)
+**Respuesta de ejemplo:**
 
-## Eliminar una Instancia
-
-Desconecta el dispositivo y elimina la instancia de forma permanente.
-
-**DELETE** \`/instances/{publicId}\`
-
-**Headers:**
-\`\`\`http
-Authorization: Bearer {token}
-Accept: application/json
+\`\`\`json
+{
+  "instancePublicId": "{instancePublicId}",
+  "status": "waiting_qr",
+  "qr": "data:image/png;base64,..."
+}
 \`\`\`
+
+> El QR puede expirar después de un periodo corto. Si expira, solicita uno nuevo y vuelve a escanearlo.
+
+## Estados comunes
+
+| Estado | Significado |
+| :--- | :--- |
+| \`connected\` | La instancia está lista para enviar mensajes. |
+| \`waiting_qr\` | La instancia requiere escanear un QR. |
+| \`disconnected\` | La instancia no está conectada actualmente. |
+| \`failed\` | Ocurrió un problema al preparar la instancia. |
 `
   },
   "mensajes": {
     id: "mensajes",
     title: "Mensajes",
     markdown: `
-# Envío de Mensajes
+# Mensajes
 
-El núcleo de la API: enviar notificaciones, alertas y mensajes transaccionales de texto plano.
+El endpoint de mensajes permite enviar textos de WhatsApp desde tu sistema.
 
-> 💡 **Tip:** La instancia especificada en la petición debe encontrarse en estado \`authorized\` antes de poder enviar cualquier mensaje.
+> La instancia indicada debe estar conectada antes de enviar mensajes.
 
 ## Enviar un mensaje de texto
-
-Envía un mensaje de texto a un número de teléfono específico.
 
 **POST** \`/messages\`
 
 **Headers:**
+
 \`\`\`http
 Authorization: Bearer {token}
 Accept: application/json
 Content-Type: application/json
 Idempotency-Key: {uuid-v4}
 \`\`\`
-*(Si usas un Token de Plataforma, debes agregar el header \`X-Tenant-Id\`)*
 
-**Body (JSON):**
+**Body:**
+
 \`\`\`json
 {
   "recipient": "5215512345678",
   "body": "Hola desde Lebytek API",
-  "instancePublicId": "01JINSTABCDEF1234567890"
+  "instancePublicId": "{instancePublicId}"
 }
 \`\`\`
 
-**Response (202 Accepted):**
+**Respuesta de ejemplo:**
+
 \`\`\`json
 {
-  "publicId": "01JMSGABCDEF...",
+  "id": "{messageId}",
   "status": "queued",
   "recipient": "5215512345678",
-  "body": "Hola desde Lebytek API"
+  "createdAt": "2026-07-04T10:05:00Z"
 }
 \`\`\`
 
 ## Consultar estado de envío
 
-Verifica el estado actual de un mensaje específico (\`queued\`, \`sent\` o \`failed\`).
+Verifica el estado actual de un mensaje enviado.
 
-**GET** \`/messages/{publicId}\`
+**GET** \`/messages/{messageId}\`
 
 **Headers:**
+
 \`\`\`http
 Authorization: Bearer {token}
 Accept: application/json
 \`\`\`
 
-## Códigos de Error Frecuentes
+**Respuesta de ejemplo:**
 
-| Código HTTP | Causa probable |
+\`\`\`json
+{
+  "id": "{messageId}",
+  "status": "sent",
+  "recipient": "5215512345678",
+  "sentAt": "2026-07-04T10:05:30Z"
+}
+\`\`\`
+
+## Estados comunes de mensaje
+
+| Estado | Significado |
 | :--- | :--- |
-| **422 Unprocessable Entity** | La instancia especificada no se encuentra en estado \`authorized\`, o el formato del JSON es inválido. |
-| **429 Too Many Requests** | Has superado el límite de 60 peticiones por minuto. (Rate limit). |
+| \`queued\` | El mensaje fue recibido y está en cola de envío. |
+| \`sent\` | El mensaje fue enviado correctamente. |
+| \`failed\` | El mensaje no pudo enviarse. |
+`
+  },
+  "errores": {
+    id: "errores",
+    title: "Errores comunes",
+    markdown: `
+# Errores comunes
+
+Estos son algunos errores que puedes recibir al consumir la API.
+
+| Código HTTP | Causa probable | Qué revisar |
+| :--- | :--- | :--- |
+| \`400\` | La petición está mal formada. | Revisa el JSON y los campos enviados. |
+| \`401\` | Token ausente o inválido. | Verifica el header \`Authorization\`. |
+| \`403\` | El token no puede realizar esa acción. | Confirma que estás usando las credenciales correctas. |
+| \`404\` | Recurso no encontrado. | Revisa el identificador usado en la URL. |
+| \`422\` | Datos inválidos o instancia no lista. | Revisa campos requeridos y estado de la instancia. |
+| \`429\` | Demasiadas solicitudes. | Reduce la frecuencia de peticiones y reintenta. |
+| \`500\` | Error inesperado. | Reintenta más tarde o contacta soporte. |
+
+## Recomendaciones
+
+- Usa siempre \`Idempotency-Key\` en envíos para evitar duplicados.
+- Valida el estado de la instancia antes de enviar mensajes.
+- No expongas tu token en el navegador.
+- Guarda los identificadores de mensajes para poder consultar su estado.
 `
   }
 };

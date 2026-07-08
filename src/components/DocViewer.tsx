@@ -75,7 +75,7 @@ export default function DocViewer({ doc }: DocViewerProps) {
       
       <div className="mt-16 pt-8 border-t border-slate-200 flex justify-between items-center text-sm text-slate-500">
         <p>Última actualización: Hoy (Vía GitHub)</p>
-        <a href="https://github.com/Parzival2103/docsV2" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">Sugerir una edición</a>
+        <a href="mailto:soporte@lebytek.com" target="_blank" rel="noopener noreferrer" className="hover:text-indigo-600 transition-colors">Sugerir una edición</a>
       </div>
     </motion.div>
   );
