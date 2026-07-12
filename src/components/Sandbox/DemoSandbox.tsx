@@ -358,6 +358,20 @@ export default function DemoSandbox() {
       <div className="mt-10 rounded-lg bg-slate-100 p-4 text-xs text-slate-600 space-y-1">
         <p><strong>Seguridad:</strong> llamadas directas a api.lebytek.com desde tu navegador (CORS). Rate limit 60 req/min y 10 envíos/min por demo.</p>
         <p><strong>Privacidad:</strong> el token no se envía a docs.lebytek.com; solo se guarda en sessionStorage de tu navegador.</p>
+        <p>
+          <strong>Tester PHP:</strong>{' '}
+          <a href="#tester" className="text-indigo-600 font-medium hover:underline">
+            Abrir API Tester
+          </a>
+          {' · '}
+          <a
+            href="/tester.php?download=1"
+            className="text-indigo-600 font-medium hover:underline"
+          >
+            Descargar tester.php
+          </a>
+          {' '}para tu propio servidor (PHP + cURL).
+        </p>
       </div>
     </div>
   );

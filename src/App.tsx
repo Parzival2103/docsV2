@@ -3,6 +3,7 @@ import { Menu, Search } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import DocViewer from './components/DocViewer';
 import DemoSandbox from './components/Sandbox/DemoSandbox';
+import ApiTester from './components/ApiTester';
 import { NAVIGATION, DOCS_DATABASE } from './data';
 
 export default function App() {
@@ -80,6 +81,8 @@ export default function App() {
         <main className="flex-1 overflow-y-auto p-4 sm:p-8 lg:p-12">
           {currentDocId === 'sandbox' ? (
             <DemoSandbox />
+          ) : currentDocId === 'tester' ? (
+            <ApiTester />
           ) : currentDoc ? (
             <DocViewer doc={currentDoc} />
           ) : (

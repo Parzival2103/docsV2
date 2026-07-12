@@ -7,6 +7,7 @@ export const NAVIGATION: DocSection[] = [
       { id: "introduccion", title: "Introducción" },
       { id: "inicio-rapido", title: "Guía de inicio rápido" },
       { id: "sandbox", title: "Sandbox demo (5 min)" },
+      { id: "tester", title: "API Tester (PHP)" },
     ]
   },
   {
@@ -73,7 +74,7 @@ Ejemplos de uso:
 4. Realizas peticiones HTTP para enviar mensajes.
 5. Consultas el estado de tus mensajes cuando lo necesites.
 
-> 💡 **Tip:** Si recibiste una demo, puedes usar el Sandbox para probar tu token y enviar un mensaje de prueba antes de integrar la API en tu sistema.
+> 💡 **Tip:** Si recibiste una demo, usa el **Sandbox** o el **[API Tester (PHP)](/#tester)** (también [descargable](/tester.php?download=1) para tu servidor).
 
 ### ¿Qué sigue?
 
@@ -158,7 +159,30 @@ El **Sandbox interactivo** de esta documentación te permite probar tu demo en ~
 2. Lee **Autenticación**, **Instancias** y **Mensajes** para contratos JSON exactos.
 3. Para cuota y plan demo: **Cuenta y cuota** (\`POST /account/status\`).
 
+## API Tester (PHP)
+
+Abre el **[API Tester](/#tester)** en esta documentación (misma UI embebida que \`/tester.php\`).
+
+Para usarlo en **tu servidor**:
+
+1. [Descarga \`tester.php\`](/tester.php?download=1)
+2. Súbelo a tu host o ejecuta local: \`php -S localhost:8000\`
+3. Pega Base URL + Bearer Token y elige el endpoint
+
+Cubre instances, messages, account/status, tenants (platform), usage y más. Para \`POST /messages\` añade en headers extra: \`Idempotency-Key: <uuid>\`. Con token de plataforma, usa \`X-Tenant-Id: <tenantPublicId>\`.
+
 > El sandbox es solo para validar credenciales demo. En producción no expongas el token en frontend público.
+`
+  },
+  "tester": {
+    id: "tester",
+    title: "API Tester (PHP)",
+    markdown: `
+# API Tester (PHP)
+
+La UI interactiva reemplaza esta página. Si no la ves, abre [/#tester](/#tester) o [tester.php](/tester.php).
+
+[Descargar tester.php](/tester.php?download=1) para ejecutarlo en tu propio servidor.
 `
   },
   "inicio-rapido": {
@@ -170,6 +194,8 @@ El **Sandbox interactivo** de esta documentación te permite probar tu demo en ~
 Esta guía refleja el flujo real verificado contra la implementación en \`api.lebytek.com\`.
 
 > 🚀 **¿Recibiste una demo?** Ten a la mano la URL base, tu token y el identificador público de instancia (\`publicId\`).
+
+> 🧰 **Tester PHP:** Abre el **[API Tester](/#tester)** en docs, o [descarga \`tester.php\`](/tester.php?download=1) para tu servidor.
 
 ---
 
