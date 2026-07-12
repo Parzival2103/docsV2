@@ -47,7 +47,21 @@ export default function DocViewer({ doc }: DocViewerProps) {
           {children}
         </code>
       );
-    }
+    },
+    a({ href, children, ...props }: any) {
+      const isDownload =
+        typeof href === 'string' &&
+        (href.includes('download=1') || href.includes('/downloads/'));
+      return (
+        <a
+          href={href}
+          {...(isDownload ? { download: 'tester.php' } : {})}
+          {...props}
+        >
+          {children}
+        </a>
+      );
+    },
   };
 
   return (
