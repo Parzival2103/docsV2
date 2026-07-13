@@ -27,126 +27,56 @@ if (isset($_GET['download'])) {
 session_start();
 
 // -------------------------------------------------------------------
-// Definición de endpoints (basado en la colección Postman provista)
+// Endpoints de cliente (tenant) — sin rutas internas de administración
 // -------------------------------------------------------------------
 $ENDPOINTS = [
     'account_status' => [
-        'label'  => 'Account · Estado de cuenta (quota demo, plan, expiración)',
+        'label'  => 'Cuenta · Estado (cuota, plan, expiración)',
         'method' => 'POST',
         'path'   => '/api/v1/account/status',
         'body'   => null,
         'params' => [],
     ],
-    'credentials_green_api' => [
-        'label'  => 'Credentials · Actualizar credenciales Green API (solo platform)',
-        'method' => 'PUT',
-        'path'   => '/api/v1/credentials/green-api',
-        'body'   => '{}',
-        'params' => [],
-    ],
     'instances_list' => [
-        'label'  => 'Instances · Listar instancias del tenant',
+        'label'  => 'Instancias · Listar',
         'method' => 'GET',
         'path'   => '/api/v1/instances',
         'body'   => null,
         'params' => [],
     ],
-    'instances_create' => [
-        'label'  => 'Instances · Crear instancia (provisioning async)',
-        'method' => 'POST',
-        'path'   => '/api/v1/instances',
-        'body'   => "{\n  \"label\": \"mi-instancia\",\n  \"externalRef\": \"ref-123\",\n  \"purpose\": \"production\"\n}",
-        'params' => [],
-    ],
     'instances_show' => [
-        'label'  => 'Instances · Ver estado de una instancia',
+        'label'  => 'Instancias · Ver estado',
         'method' => 'GET',
         'path'   => '/api/v1/instances/:instancia_public_id',
         'body'   => null,
         'params' => ['instancia_public_id' => '01KWM4S9B07K9H042CDBV8MJXF'],
     ],
     'instances_qr' => [
-        'label'  => 'Instances · Obtener QR de vinculación',
+        'label'  => 'Instancias · Obtener QR de vinculación',
         'method' => 'GET',
         'path'   => '/api/v1/instances/:instancia_public_id/qr',
         'body'   => null,
         'params' => ['instancia_public_id' => '01KWM4S9B07K9H042CDBV8MJXF'],
     ],
-    'instances_delete' => [
-        'label'  => 'Instances · Eliminar instancia (teardown async)',
-        'method' => 'DELETE',
-        'path'   => '/api/v1/instances/:instancia_public_id',
-        'body'   => null,
-        'params' => ['instancia_public_id' => '01KWM4S9B07K9H042CDBV8MJXF'],
-    ],
     'messages_send' => [
-        'label'  => 'Messages · Enviar mensaje',
+        'label'  => 'Mensajes · Enviar',
         'method' => 'POST',
         'path'   => '/api/v1/messages',
         'body'   => "{\n  \"recipient\": \"5215512345678\",\n  \"body\": \"Hola desde tester.php\",\n  \"instancePublicId\": \"01KWM4S9B07K9H042CDBV8MJXF\"\n}",
         'params' => [],
     ],
     'messages_show' => [
-        'label'  => 'Messages · Ver un mensaje',
+        'label'  => 'Mensajes · Consultar',
         'method' => 'GET',
         'path'   => '/api/v1/messages/:mensaje_public_id',
         'body'   => null,
         'params' => ['mensaje_public_id' => '01KWWKR6BD4WPCDZ2A5H9JVXRF'],
     ],
-    'platform_health' => [
-        'label'  => 'Platform · Health check',
-        'method' => 'GET',
-        'path'   => '/api/v1/health',
-        'body'   => null,
-        'params' => [],
-    ],
-    'tenants_list' => [
-        'label'  => 'Tenants · Listar tenants (solo platform)',
-        'method' => 'GET',
-        'path'   => '/api/v1/tenants',
-        'body'   => null,
-        'params' => [],
-    ],
-    'tenants_create' => [
-        'label'  => 'Tenants · Crear tenant',
-        'method' => 'POST',
-        'path'   => '/api/v1/tenants',
-        'body'   => "{\n  \"name\": \"Mi Empresa\",\n  \"slug\": \"mi-empresa\",\n  \"externalRef\": \"erp-001\"\n}",
-        'params' => [],
-    ],
-    'tenants_show' => [
-        'label'  => 'Tenants · Ver tenant',
-        'method' => 'GET',
-        'path'   => '/api/v1/tenants/:public_id',
-        'body'   => null,
-        'params' => ['public_id' => '01KWB1WP1XV138BHF68QGK0J6R'],
-    ],
-    'tenants_update' => [
-        'label'  => 'Tenants · Actualizar tenant',
-        'method' => 'PATCH',
-        'path'   => '/api/v1/tenants/:public_id',
-        'body'   => "{\n  \"name\": \"Mi Empresa SA\",\n  \"isActive\": true,\n  \"commercialStatus\": \"demo\",\n  \"planSlug\": \"pro\",\n  \"planName\": \"Pro\",\n  \"demoStartedAt\": \"" . date('Y-m-d\TH:i:s') . "\",\n  \"demoExpiresAt\": \"" . date('Y-m-d\TH:i:s', strtotime('+15 days')) . "\",\n  \"messagesMonthlyLimit\": 1000\n}",
-        'params' => ['public_id' => '01KWB1WP1XV138BHF68QGK0J6R'],
-    ],
-    'tenants_issue_token' => [
-        'label'  => 'Tenants · Emitir token de API (solo platform)',
-        'method' => 'POST',
-        'path'   => '/api/v1/tenants/:tenant_public_id/tokens',
-        'body'   => "{\n  \"name\": \"token-desde-tester\",\n  \"abilities\": [\"mensajes.enviar\"]\n}",
-        'params' => ['tenant_public_id' => '01KWB1WP1XV138BHF68QGK0J6R'],
-    ],
     'usage' => [
-        'label'  => 'Usage · Consumo del tenant',
+        'label'  => 'Uso · Consumo de la cuenta',
         'method' => 'GET',
         'path'   => '/api/v1/usage',
         'body'   => null,
-        'params' => [],
-    ],
-    'webhooks_incoming' => [
-        'label'  => 'Webhooks · Simular webhook entrante',
-        'method' => 'POST',
-        'path'   => '/api/v1/webhooks/incoming',
-        'body'   => "{\n  \"event\": \"message.received\",\n  \"idempotencyKey\": \"demo-key-1\",\n  \"payload\": {}\n}",
         'params' => [],
     ],
 ];
@@ -432,7 +362,7 @@ $currentDef = $ENDPOINTS[$selected] ?? reset($ENDPOINTS);
 <body>
 
 <h1>WhatsApiLebytek · API Tester</h1>
-<div class="sub">Standalone PHP tester — sin dependencias. Endpoints tomados de la colección Postman v1.</div>
+<div class="sub">Tester de cliente Lebytek — endpoints de tenant (instancias, mensajes, cuenta, uso). Sin dependencias.</div>
 
 <form method="post" id="testerForm">
 <div class="layout">
@@ -447,7 +377,7 @@ $currentDef = $ENDPOINTS[$selected] ?? reset($ENDPOINTS);
       <input type="password" id="token" name="token" value="<?= h($defaultToken) ?>" placeholder="Pega aquí tu token de API">
 
       <label for="extra_headers">Headers extra (uno por línea, "Nombre: valor")</label>
-      <textarea id="extra_headers" name="extra_headers" style="min-height:60px" placeholder="Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000&#10;X-Tenant-Id: 01KWB1WP1XV138BHF68QGK0J6R"><?= h($_POST['extra_headers'] ?? '') ?></textarea>
+      <textarea id="extra_headers" name="extra_headers" style="min-height:60px" placeholder="Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000"><?= h($_POST['extra_headers'] ?? '') ?></textarea>
     </div>
 
     <div class="panel">

@@ -6,7 +6,7 @@
 const API_BASE = (import.meta.env.VITE_LEBYTEK_API_URL as string | undefined)?.replace(/\/$/, '')
   ?? 'https://api.lebytek.com/api/v1';
 
-const ALLOWED_PATH = /^\/(health|instances(\/[0-9A-HJKMNP-TV-Z]{26})?(\/qr)?|messages(\/[0-9A-HJKMNP-TV-Z]{26})?)$/i;
+const ALLOWED_PATH = /^\/(instances(\/[0-9A-HJKMNP-TV-Z]{26})?(\/qr)?|messages(\/[0-9A-HJKMNP-TV-Z]{26})?)$/i;
 
 const TOKEN_MIN = 32;
 const TOKEN_MAX = 256;
@@ -116,7 +116,6 @@ export async function lebytekFetch<T = unknown>(
 export interface InstanceResource {
   publicId: string;
   status: string;
-  greenState?: string | null;
   label?: string;
 }
 

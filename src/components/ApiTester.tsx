@@ -12,7 +12,7 @@ export default function ApiTester() {
         <div>
           <h1 className="text-lg font-semibold text-slate-900">API Tester (PHP)</h1>
           <p className="text-xs text-slate-500 mt-0.5">
-            UI standalone en el servidor de docs — pega tu Bearer token y prueba endpoints v1.
+            UI standalone — pega tu Bearer token de cliente y prueba instancias, mensajes, cuenta y uso.
           </p>
         </div>
         <div className="flex items-center gap-2">

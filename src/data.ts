@@ -19,7 +19,6 @@ export const NAVIGATION: DocSection[] = [
       { id: "cuenta", title: "Cuenta y cuota", isApiRef: true },
       { id: "uso", title: "Uso", isApiRef: true },
       { id: "errores", title: "Errores comunes", isApiRef: true },
-      { id: "plataforma", title: "API plataforma", isApiRef: true },
     ]
   }
 ];
@@ -130,7 +129,7 @@ El **Sandbox interactivo** de esta documentación te permite probar tu demo en ~
 | POST | \`/messages\` | \`mensajes.enviar\` | Requiere instancia \`authorized\` |
 | GET | \`/messages/{publicId}\` | \`mensajes.ver\` | Poll de estado |
 
-**No** usa \`GET /health\` (tokens demo no tienen \`api.health\` → 403).
+El sandbox solo llama a rutas de instancias y mensajes (las que permite tu token).
 
 ## Seguridad y límites
 
@@ -140,7 +139,7 @@ El **Sandbox interactivo** de esta documentación te permite probar tu demo en ~
 | Destino de llamadas | Directo a \`https://api.lebytek.com/api/v1\` (CORS); **no** pasa por docs.lebytek.com |
 | Rate limit | 60 req/min API; 10 envíos/min en \`POST /messages\` |
 | Cuota | 429 si se agota la cuota mensual del plan demo |
-| Rutas permitidas | El cliente del sandbox solo permite health/instances/messages (anti-SSRF) |
+| Rutas permitidas | El cliente del sandbox solo permite instances/messages (anti-SSRF) |
 
 ## Errores frecuentes en el sandbox
 
@@ -169,7 +168,7 @@ Para usarlo en **tu servidor**:
 2. Súbelo a tu host o ejecuta local: \`php -S localhost:8000\`
 3. Pega Base URL + Bearer Token y elige el endpoint
 
-Cubre instances, messages, account/status, tenants (platform), usage y más. Para \`POST /messages\` añade en headers extra: \`Idempotency-Key: <uuid>\`. Con token de plataforma, usa \`X-Tenant-Id: <tenantPublicId>\`.
+Cubre instancias, mensajes, cuenta y uso. Para \`POST /messages\` añade en headers extra: \`Idempotency-Key: <uuid>\`.
 
 > El sandbox es solo para validar credenciales demo. En producción no expongas el token en frontend público.
 `
@@ -211,25 +210,21 @@ Guarda estos datos en un lugar seguro.
 
 > 🚨 **\`tenantPublicId\` ≠ \`instancePublicId\`:** El correo puede incluir ambos identificadores. En \`/instances/{publicId}\` y en \`instancePublicId\` del body de \`POST /messages\` usa siempre el \`publicId\` de **instancia** (\`GET /instances\` → \`data[].publicId\`). El ID del tenant en esas rutas produce **404** o **422**.
 
-### Matriz del token de correo (demo)
+### Qué puedes hacer con tu token
 
-Si recibiste el token en el **segundo correo** de activación/demo, está limitado a capacidades de **cliente tenant**:
+Tu token de cliente permite:
 
-| Ruta | ¿Permitida? | Permiso |
-| :--- | :---: | :--- |
-| \`GET /instances\` | Sí | \`instancias.ver\` |
-| \`GET /instances/{publicId}\` | Sí | \`instancias.ver\` |
-| \`GET /instances/{publicId}/qr\` | Sí | \`instancias.ver\` |
-| \`POST /messages\` | Sí | \`mensajes.enviar\` |
-| \`GET /messages/{publicId}\` | Sí | \`mensajes.ver\` |
-| \`GET /usage\` | Sí | \`mensajes.ver\` |
-| \`POST /account/status\` | Sí | \`cuenta.ver\` |
-| \`GET /health\` | **No** (403) | \`api.health\` |
-| \`GET/POST/PATCH /tenants*\` | **No** (403) | tokens plataforma |
-| \`POST /instances\`, \`DELETE /instances/{publicId}\` | **No** (403) | \`instancias.crear\` / \`instancias.eliminar\` |
-| \`PUT /credentials/green-api\` | **No** (403/501) | \`credenciales.gestionar\` |
+| Ruta | Permiso |
+| :--- | :--- |
+| \`GET /instances\` | \`instancias.ver\` |
+| \`GET /instances/{publicId}\` | \`instancias.ver\` |
+| \`GET /instances/{publicId}/qr\` | \`instancias.ver\` |
+| \`POST /messages\` | \`mensajes.enviar\` |
+| \`GET /messages/{publicId}\` | \`mensajes.ver\` |
+| \`GET /usage\` | \`mensajes.ver\` |
+| \`POST /account/status\` | \`cuenta.ver\` |
 
-**Headers con token de correo:**
+**Headers:**
 
 | Header | Uso |
 | :--- | :--- |
@@ -237,15 +232,14 @@ Si recibiste el token en el **segundo correo** de activación/demo, está limita
 | \`Accept: application/json\` | Siempre |
 | \`Content-Type: application/json\` | Escrituras con cuerpo JSON |
 | \`Idempotency-Key: {uuid}\` | **Obligatorio** en POST/PUT/PATCH |
-| \`X-Tenant-Id\` | **No enviar** — solo tokens de servicio de plataforma |
 
-> Un **403** en rutas **prohibidas** es esperado; no indica que el token esté roto.
+> Si recibes **403** en una ruta que no aparece arriba, tu token no incluye ese permiso (es esperado).
 
 ---
 
 ## 2. Validar tu token
 
-Los tokens de demo incluyen permisos \`instancias.ver\`, \`mensajes.enviar\`, \`mensajes.ver\` y \`cuenta.ver\`. **No** incluyen \`api.health\`, por lo que \`GET /health\` devolverá **403** con un token demo estándar.
+Los tokens de demo incluyen permisos \`instancias.ver\`, \`mensajes.enviar\`, \`mensajes.ver\` y \`cuenta.ver\`.
 
 **Opción A — listar instancias:**
 
@@ -336,7 +330,6 @@ El \`publicId\` del mensaje viene en la respuesta del POST.
 
 ## Problemas frecuentes
 
-- **403 en /health:** Normal con token demo; usa \`GET /instances\` o \`POST /account/status\`.
 - **409 al enviar:** La instancia no está \`authorized\`; revisa estado y QR.
 - **422 sin Idempotency-Key:** Obligatorio en POST (y en PUT/PATCH de la API).
 - **429:** Límite de peticiones (60/min general, 10/min en envío) o cuota mensual agotada.
@@ -352,7 +345,7 @@ Consulta **Autenticación**, **Instancias** y **Mensajes** para el detalle compl
     markdown: `
 # Autenticación
 
-Todas las rutas bajo \`/api/v1\` requieren **Bearer Token** (Laravel Sanctum), salvo webhooks internos.
+Todas las rutas bajo \`/api/v1\` requieren **Bearer Token** (Laravel Sanctum).
 
 ## Header de autenticación
 
@@ -370,15 +363,13 @@ El token puede ser el valor completo emitido por Sanctum (incluye \`id|\` al ini
 | \`Accept: application/json\` | Siempre |
 | \`Content-Type: application/json\` | POST, PUT, PATCH con cuerpo |
 | \`Idempotency-Key: {uuid}\` | **Obligatorio** en POST, PUT, PATCH (422 si falta) |
-| \`X-Tenant-Id: {tenantPublicId}\` | Solo tokens de servicio de plataforma |
 
 ## Permisos del token
 
-Cada ruta exige un permiso Sanctum (\`ability\`). Ejemplos:
+Cada ruta exige un permiso (\`ability\`). Con tu token de cliente:
 
 | Permiso | Rutas |
 | :--- | :--- |
-| \`api.health\` | \`GET /health\` |
 | \`instancias.ver\` | \`GET /instances\`, \`GET /instances/{publicId}\`, \`GET .../qr\` |
 | \`mensajes.enviar\` | \`POST /messages\` |
 | \`mensajes.ver\` | \`GET /messages/{publicId}\`, \`GET /usage\` |
@@ -388,15 +379,7 @@ Token demo típico: \`instancias.ver\`, \`mensajes.enviar\`, \`mensajes.ver\`, \
 
 Sin el permiso requerido → **403**.
 
-### Token de correo (cliente demo)
-
-| Permitido | Prohibido (403 esperado) |
-| :--- | :--- |
-| \`GET /instances\`, \`GET /instances/{publicId}\`, \`GET .../qr\` | \`GET /health\` |
-| \`POST /messages\`, \`GET /messages/{publicId}\`, \`GET /usage\` | Toda ruta \`/tenants*\` |
-| \`POST /account/status\` (con \`cuenta.ver\`) | \`POST\`/\`DELETE /instances\`, \`PUT /credentials/green-api\` |
-
-**Headers:** \`Authorization\`, \`Accept\`; en escrituras añade \`Content-Type\` + \`Idempotency-Key\`. **No** envíes \`X-Tenant-Id\`.
+**Headers:** \`Authorization\`, \`Accept\`; en escrituras añade \`Content-Type\` + \`Idempotency-Key\`.
 
 ## Idempotencia
 
@@ -534,8 +517,6 @@ curl -X GET "https://api.lebytek.com/api/v1/instances" \\
       "label": "Mi instancia principal",
       "purpose": "demo",
       "status": "authorized",
-      "greenState": "authorized",
-      "idInstance": "1101000001",
       "authorizedAt": "2026-07-04T10:00:00+00:00",
       "createdAt": "2026-07-04T09:00:00+00:00",
       "updatedAt": "2026-07-04T10:00:00+00:00"
@@ -564,15 +545,13 @@ curl -X GET "https://api.lebytek.com/api/v1/instances/{publicId}" \\
   "label": "Mi instancia principal",
   "purpose": "demo",
   "status": "authorized",
-  "greenState": "authorized",
-  "idInstance": "1101000001",
   "authorizedAt": "2026-07-04T10:00:00+00:00",
   "createdAt": "2026-07-04T09:00:00+00:00",
   "updatedAt": "2026-07-04T10:00:00+00:00"
 }
 \`\`\`
 
-Si \`status\` no es \`authorized\`, la API sincroniza estado con Green API antes de responder.
+Si \`status\` no es \`authorized\`, la API actualiza el estado de conexión antes de responder.
 
 ## Obtener QR de conexión
 
@@ -602,22 +581,18 @@ curl -X GET "https://api.lebytek.com/api/v1/instances/{publicId}/qr" \\
 - \`Instance already authorized\`
 - \`Instance not ready for QR\`
 
-## Estados de instancia (verificados en código)
+## Estados de instancia
 
 | \`status\` | Significado |
 | :--- | :--- |
-| \`provisioning\` | Creación en curso (async). |
-| \`configuring\` | Credenciales Green API asignadas; configurando webhooks. |
+| \`provisioning\` | Creación en curso. |
+| \`configuring\` | Configurando la conexión. |
 | \`waiting_qr\` | Esperando escaneo de QR. |
 | \`authorized\` | Lista para enviar mensajes. |
 | \`failed\` | Falló el aprovisionamiento. |
-| \`deleted\` | Instancia eliminada (teardown). |
+| \`deleted\` | Instancia eliminada. |
 
-> \`greenState\` refleja el estado reportado por Green API (\`authorized\`, \`notAuthorized\`, etc.).
-
-## Crear / eliminar instancia
-
-Solo **servicio de plataforma** (\`instancias.crear\`, \`instancias.eliminar\`). Ver **API plataforma**.
+Tu token de cliente permite **listar**, **consultar** y obtener **QR**. El alta o baja de instancias las gestiona Lebytek al activar tu cuenta.
 `
   },
   "mensajes": {
@@ -726,11 +701,11 @@ curl -X GET "https://api.lebytek.com/api/v1/messages/{publicId}" \\
 
 | \`status\` | Significado |
 | :--- | :--- |
-| \`queued\` | Encolado; job \`TransactionalMessageJob\` pendiente o en curso. |
-| \`sent\` | Green API aceptó el envío (\`idMessage\`); ver nota abajo. |
+| \`queued\` | Encolado; pendiente de envío. |
+| \`sent\` | La API aceptó el envío; ver nota abajo. |
 | \`failed\` | Error de envío; revisar campo \`error\`. |
 
-> ⚠️ **\`sent\` ≠ entrega garantizada:** \`status: "sent"\` solo confirma que Green API aceptó el mensaje. **No** garantiza que el destinatario lo haya recibido o leído en WhatsApp.
+> ⚠️ **\`sent\` ≠ entrega garantizada:** \`status: "sent"\` confirma que Lebytek aceptó y procesó el mensaje hacia WhatsApp. **No** garantiza que el destinatario lo haya recibido o leído.
 
 ## Ejemplo Axios
 
@@ -785,13 +760,13 @@ console.log(res.status, await res.json());
     markdown: `
 # Cuenta y cuota
 
-Estado comercial del tenant, plan y consumo del mes. Útil para validar un token demo **sin** usar \`GET /health\` (los tokens demo no tienen \`api.health\`).
+Estado comercial de tu cuenta, plan y consumo del mes.
 
 > **Validación de token:** \`POST /account/status\` es el método preferido. Si recibes **403** por falta de \`cuenta.ver\`, valida con \`GET /instances\`.
 
 **POST** \`/account/status\`
 
-Permiso: \`cuenta.ver\`. Solo tokens con \`tenant_id\` (no servicio de plataforma sin contexto de tenant).
+Permiso: \`cuenta.ver\`.
 
 \`\`\`bash
 curl -X POST "https://api.lebytek.com/api/v1/account/status" \\
@@ -839,7 +814,6 @@ curl -X POST "https://api.lebytek.com/api/v1/account/status" \\
 
 | Código | Mensaje típico | Causa |
 | :--- | :--- | :--- |
-| \`403\` | \`Tenant token required.\` | Token de plataforma sin tenant |
 | \`403\` | sin permiso | Falta ability \`cuenta.ver\` |
 | \`401\` | \`Unauthenticated.\` | Token ausente o inválido |
 
@@ -920,17 +894,8 @@ La API responde JSON en rutas \`/api/*\`. Estructura verificada en middleware, c
 | \`422\` | Validación o Idempotency-Key | Campos requeridos; header idempotencia |
 | \`429\` | Rate limit o cuota mensual | Frecuencia; plan y \`POST /account/status\` |
 | \`500\` | Error interno | Reintentar; contactar soporte |
-| \`501\` | No implementado | \`PUT /credentials/green-api\` |
 
 ## Ejemplos de cuerpo real
-
-**400 (X-Tenant-Id)**
-
-\`\`\`json
-{
-  "message": "X-Tenant-Id header required for this operation."
-}
-\`\`\`
 
 **401**
 
@@ -940,19 +905,11 @@ La API responde JSON en rutas \`/api/*\`. Estructura verificada en middleware, c
 }
 \`\`\`
 
-**403 (Spatie)**
+**403**
 
 \`\`\`json
 {
   "message": "User does not have the right permissions."
-}
-\`\`\`
-
-**403 (tenant)**
-
-\`\`\`json
-{
-  "message": "Tenant access required."
 }
 \`\`\`
 
@@ -1011,13 +968,13 @@ La API responde JSON en rutas \`/api/*\`. Estructura verificada en middleware, c
 
 | Síntoma | Causa | Solución |
 | :--- | :--- | :--- |
-| Mensaje no llega o rechazo en Green API | Formato \`528…\` en lugar de \`521…\` | Usa \`521\` + 10 dígitos (E.164 sin \`+\`) |
+| Mensaje no llega | Formato \`528…\` en lugar de \`521…\` | Usa \`521\` + 10 dígitos (E.164 sin \`+\`) |
 
 Ejemplo correcto: \`5215512345678\` (\`52\` país + \`1\` móvil + 10 dígitos). Ejemplo incorrecto: \`5285512345678\`.
 
 ## Estado \`sent\` vs entrega real
 
-\`status: "sent"\` solo indica que la API encoló el mensaje y Green API lo aceptó (\`idMessage\`). **No** garantiza entrega al teléfono del destinatario ni confirmación de lectura.
+\`status: "sent"\` indica que Lebytek procesó el envío hacia WhatsApp. **No** garantiza entrega al teléfono del destinatario ni confirmación de lectura.
 
 ## Recomendaciones
 
@@ -1026,166 +983,6 @@ Ejemplo correcto: \`5215512345678\` (\`52\` país + \`1\` móvil + 10 dígitos).
 - Guarda \`publicId\` del mensaje para consultas posteriores.
 - No expongas el token en el navegador.
 - En México móvil, verifica el prefijo \`521\`, no \`528\`.
-`
-  },
-  "plataforma": {
-    id: "plataforma",
-    title: "API plataforma",
-    markdown: `
-# API plataforma
-
-Endpoints para el **servicio de plataforma** (back-office Lebytek), no para tokens demo de cliente. Requieren usuario \`isPlatformAdmin()\` y permisos específicos.
-
-Header **obligatorio** en rutas con alcance de tenant cuando usas token de plataforma (\`/instances\`, \`/messages\`, \`/usage\`, etc.):
-
-\`\`\`http
-X-Tenant-Id: {tenantPublicId}
-\`\`\`
-
-Sin este header en esas rutas → **400** \`X-Tenant-Id header required for this operation.\`
-
-## Health (monitoreo)
-
-**GET** \`/health\` — permiso \`api.health\`. Sin \`Idempotency-Key\`.
-
-\`\`\`json
-{
-  "status": "ok",
-  "checks": {
-    "database": { "ok": true, "message": "connected" },
-    "redis": { "ok": true, "message": "connected" }
-  },
-  "timestamp": "2026-07-08T12:00:00+00:00",
-  "actingTenant": "01JXXXXXXXXXXXXXXXXXXXXXX"
-}
-\`\`\`
-
-\`status\` puede ser \`degraded\` si falla database o redis.
-
-## Tenants
-
-| Método | Ruta | Permiso | Notas |
-| :--- | :--- | :--- | :--- |
-| GET | \`/tenants\` | \`tenants.ver\` | Paginado |
-| POST | \`/tenants\` | \`tenants.provisionar\` | 201 creado / 200 idempotente |
-| GET | \`/tenants/{publicId}\` | \`tenants.ver\` | |
-| PATCH | \`/tenants/{publicId}\` | \`tenants.gestionar\` | |
-| POST | \`/tenants/{publicId}/tokens\` | \`tenants.gestionar\` | Emite token + abilities |
-
-### Ejemplo — crear tenant
-
-**POST** \`/tenants\`
-
-\`\`\`bash
-curl -X POST "https://api.lebytek.com/api/v1/tenants" \\
-  -H "Authorization: Bearer {platformToken}" \\
-  -H "Accept: application/json" \\
-  -H "Content-Type: application/json" \\
-  -H "Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000" \\
-  -d '{
-    "name": "Acme Corp",
-    "slug": "acme-corp",
-    "externalRef": "crm-12345"
-  }'
-\`\`\`
-
-\`\`\`json
-{
-  "name": "Acme Corp",
-  "slug": "acme-corp",
-  "externalRef": "crm-12345"
-}
-\`\`\`
-
-### Ejemplo — emitir token de tenant
-
-**POST** \`/tenants/{publicId}/tokens\`
-
-\`\`\`bash
-curl -X POST "https://api.lebytek.com/api/v1/tenants/{publicId}/tokens" \\
-  -H "Authorization: Bearer {platformToken}" \\
-  -H "Accept: application/json" \\
-  -H "Content-Type: application/json" \\
-  -H "Idempotency-Key: 123e4567-e89b-12d3-a456-426614174001" \\
-  -d '{
-    "name": "Token integración CRM",
-    "abilities": ["instancias.ver", "mensajes.enviar", "mensajes.ver"]
-  }'
-\`\`\`
-
-\`\`\`json
-{
-  "name": "Token integración CRM",
-  "abilities": ["instancias.ver", "mensajes.enviar", "mensajes.ver"]
-}
-\`\`\`
-
-> El valor del token (\`plainTextToken\`) se muestra **una sola vez** en la respuesta. Guárdalo de inmediato; no se puede recuperar después.
-
-## Instancias (provisionamiento)
-
-| Método | Ruta | Permiso | Notas |
-| :--- | :--- | :--- | :--- |
-| POST | \`/instances\` | \`instancias.crear\` | 202 async; body: \`label\`, \`externalRef?\`, \`purpose?\` |
-| DELETE | \`/instances/{publicId}\` | \`instancias.eliminar\` | 202 \`{"accepted":true}\` |
-
-### Ejemplo — crear instancia
-
-**POST** \`/instances\`
-
-\`\`\`bash
-curl -X POST "https://api.lebytek.com/api/v1/instances" \\
-  -H "Authorization: Bearer {platformToken}" \\
-  -H "Accept: application/json" \\
-  -H "Content-Type: application/json" \\
-  -H "X-Tenant-Id: {tenantPublicId}" \\
-  -H "Idempotency-Key: 123e4567-e89b-12d3-a456-426614174002" \\
-  -d '{
-    "label": "Línea principal",
-    "externalRef": "wa-line-001",
-    "purpose": "production"
-  }'
-\`\`\`
-
-\`\`\`json
-{
-  "label": "Línea principal",
-  "externalRef": "wa-line-001",
-  "purpose": "production"
-}
-\`\`\`
-
-## Credenciales BYO
-
-**PUT** \`/credentials/green-api\` — permiso \`credenciales.gestionar\`
-
-Responde **501**:
-
-\`\`\`json
-{
-  "message": "Not implemented",
-  "detail": "Demo instances use partner-provisioned credentials. BYO credentials are planned for a future release."
-}
-\`\`\`
-
-## Webhooks (entrada Green API)
-
-**POST** \`/api/v1/webhooks/incoming\`
-
-Sin Bearer. Middleware \`webhook.signature\` + \`webhook.idempotency\`. Uso interno Green API → Lebytek.
-
-## Resumen: cliente demo vs plataforma
-
-| Capacidad | Token demo | Token plataforma |
-| :--- | :---: | :---: |
-| Listar / ver instancias, QR | Sí | Sí (con tenant) |
-| Enviar / consultar mensajes | Sí | Sí (con tenant) |
-| \`POST /account/status\` | Sí | No (403 \`Tenant token required.\`) |
-| \`GET /usage\` | Sí | Sí (con \`X-Tenant-Id\`) |
-| \`GET /health\` | No (\`api.health\`) | Sí |
-| Crear/eliminar instancias, tenants, tokens | No | Sí |
-
-> Endpoints verificados en \`routes/api.php\` del repo api. Detalle de payloads webhook: \`IncomingWebhookController\`.
 `
   }
 };
