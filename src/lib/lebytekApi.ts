@@ -11,7 +11,10 @@ const ALLOWED_PATH = /^\/(instances(\/[0-9A-HJKMNP-TV-Z]{26})?(\/qr)?|messages(\
 const TOKEN_MIN = 32;
 const TOKEN_MAX = 256;
 const BODY_MAX = 1000;
-const RECIPIENT_MAX = 15;
+const PHONE_MIN = 10;
+const PHONE_MAX = 15;
+const RECIPIENT_MAX = 48;
+const GROUP_RECIPIENT = /^\d{10,32}@g\.us$/;
 
 export class LebytekApiError extends Error {
   constructor(
@@ -37,9 +40,21 @@ export function validateToken(token: string): string {
 }
 
 export function validateRecipient(recipient: string): string {
-  const digits = recipient.replace(/\D/g, '');
-  if (digits.length < 10 || digits.length > RECIPIENT_MAX) {
-    throw new Error('Destinatario inválido. Usa E.164 sin + (10–15 dígitos).');
+  const trimmed = recipient.trim();
+  if (trimmed.length < 1 || trimmed.length > RECIPIENT_MAX) {
+    throw new Error('Destinatario inválido.');
+  }
+
+  if (trimmed.includes('@')) {
+    if (!GROUP_RECIPIENT.test(trimmed)) {
+      throw new Error('ID de grupo inválido. Usa el formato completo terminado en @g.us.');
+    }
+    return trimmed;
+  }
+
+  const digits = trimmed.replace(/\D/g, '');
+  if (digits.length < PHONE_MIN || digits.length > PHONE_MAX) {
+    throw new Error('Destinatario inválido. Usa E.164 sin + (10–15 dígitos) o un ID de grupo @g.us.');
   }
   return digits;
 }

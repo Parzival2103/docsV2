@@ -622,11 +622,13 @@ Idempotency-Key: {uuid}
 
 | Campo | Reglas |
 | :--- | :--- |
-| \`recipient\` | Requerido, string, máx. 32 caracteres (se normalizan solo dígitos) |
+| \`recipient\` | Requerido, string, máx. 48 caracteres — teléfono E.164 sin \`+\` (10–15 dígitos) o ID de grupo WhatsApp \`@g.us\` |
 | \`body\` | Requerido, string, máx. 4096 caracteres |
 | \`instancePublicId\` | Requerido, string — **ID de instancia**, no de tenant (ver \`GET /instances\` → \`data[].publicId\`) |
 
-## Formato de destinatario (México móvil)
+## Formato de destinatario
+
+### Contacto (teléfono)
 
 Para celulares en México, usa E.164 **sin** \`+\`:
 
@@ -641,6 +643,23 @@ Regla: **52** (país) + **1** (móvil) + **10 dígitos** → \`521XXXXXXXXXX\`.
 {
   "recipient": "5215512345678",
   "body": "Hola desde Lebytek API",
+  "instancePublicId": "01JXXXXXXXXXXXXXXXXXXXXXX"
+}
+\`\`\`
+
+### Grupo de WhatsApp
+
+Para enviar a un grupo, usa el ID completo terminado en \`@g.us\` (10–32 dígitos antes del sufijo):
+
+| Formato | Ejemplo | ¿Válido? |
+| :--- | :--- | :---: |
+| Correcto — ID completo \`@g.us\` | \`120363012345678901@g.us\` | Sí |
+| Incorrecto — solo dígitos, sin sufijo | \`120363012345678901\` | No |
+
+\`\`\`json
+{
+  "recipient": "120363012345678901@g.us",
+  "body": "Hola al grupo desde Lebytek API",
   "instancePublicId": "01JXXXXXXXXXXXXXXXXXXXXXX"
 }
 \`\`\`
