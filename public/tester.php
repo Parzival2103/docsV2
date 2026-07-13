@@ -49,20 +49,20 @@ $ENDPOINTS = [
         'method' => 'GET',
         'path'   => '/api/v1/instances/:instancia_public_id',
         'body'   => null,
-        'params' => ['instancia_public_id' => '01KWM4S9B07K9H042CDBV8MJXF'],
+        'params' => ['instancia_public_id' => ''],
     ],
     'instances_qr' => [
         'label'  => 'Instancias · Obtener QR de vinculación',
         'method' => 'GET',
         'path'   => '/api/v1/instances/:instancia_public_id/qr',
         'body'   => null,
-        'params' => ['instancia_public_id' => '01KWM4S9B07K9H042CDBV8MJXF'],
+        'params' => ['instancia_public_id' => ''],
     ],
     'messages_send' => [
         'label'  => 'Mensajes · Enviar',
         'method' => 'POST',
         'path'   => '/api/v1/messages',
-        'body'   => "{\n  \"recipient\": \"5215512345678\",\n  \"body\": \"Hola desde tester.php\",\n  \"instancePublicId\": \"01KWM4S9B07K9H042CDBV8MJXF\"\n}",
+        'body'   => "{\n  \"recipient\": \"5215512345678\",\n  \"body\": \"Hola desde tester.php\",\n  \"instancePublicId\": \"\"\n}",
         'params' => [],
     ],
     'messages_show' => [
@@ -70,7 +70,7 @@ $ENDPOINTS = [
         'method' => 'GET',
         'path'   => '/api/v1/messages/:mensaje_public_id',
         'body'   => null,
-        'params' => ['mensaje_public_id' => '01KWWKR6BD4WPCDZ2A5H9JVXRF'],
+        'params' => ['mensaje_public_id' => ''],
     ],
     'usage' => [
         'label'  => 'Uso · Consumo de la cuenta',
@@ -113,6 +113,9 @@ function do_request(string $method, string $url, ?string $token, ?string $body, 
         }
     }
 
+    // POST/PUT/PATCH requieren Idempotency-Key; se inyecta si falta.
+    $headers = ensure_idempotency_header($headers, $method);
+
     curl_setopt_array($ch, [
         CURLOPT_URL            => $url,
         CURLOPT_CUSTOMREQUEST  => strtoupper($method),
@@ -135,12 +138,13 @@ function do_request(string $method, string $url, ?string $token, ?string $body, 
         $error = curl_error($ch);
         curl_close($ch);
         return [
-            'ok'          => false,
-            'error'       => $error,
-            'status'      => null,
-            'headers'     => '',
-            'body'        => '',
-            'elapsed_ms'  => $elapsedMs,
+            'ok'              => false,
+            'error'           => $error,
+            'status'          => null,
+            'headers'         => '',
+            'body'            => '',
+            'elapsed_ms'      => $elapsedMs,
+            'request_headers' => $headers,
         ];
     }
 
@@ -152,13 +156,60 @@ function do_request(string $method, string $url, ?string $token, ?string $body, 
     curl_close($ch);
 
     return [
-        'ok'         => true,
-        'error'      => null,
-        'status'     => $status,
-        'headers'    => trim($rawHeaders),
-        'body'       => $rawBody,
-        'elapsed_ms' => $elapsedMs,
+        'ok'              => true,
+        'error'           => null,
+        'status'          => $status,
+        'headers'         => trim($rawHeaders),
+        'body'            => $rawBody,
+        'elapsed_ms'      => $elapsedMs,
+        'request_headers' => $headers,
     ];
+}
+
+function ensure_idempotency_header(array $headers, string $method): array
+{
+    if (! in_array(strtoupper($method), ['POST', 'PUT', 'PATCH'], true)) {
+        return $headers;
+    }
+
+    foreach ($headers as $h) {
+        if (stripos($h, 'Idempotency-Key:') === 0) {
+            return $headers;
+        }
+    }
+
+    $uuid = sprintf(
+        '%04x%04x-%04x-%04x-%04x-%04x%04x%04x',
+        random_int(0, 0xffff),
+        random_int(0, 0xffff),
+        random_int(0, 0xffff),
+        random_int(0, 0x0fff) | 0x4000,
+        random_int(0, 0x3fff) | 0x8000,
+        random_int(0, 0xffff),
+        random_int(0, 0xffff),
+        random_int(0, 0xffff)
+    );
+
+    $headers[] = 'Idempotency-Key: ' . $uuid;
+
+    return $headers;
+}
+
+function parse_extra_headers(string $raw): array
+{
+    $lines = preg_split('/\r\n|\r|\n/', $raw) ?: [];
+    $out = [];
+    foreach ($lines as $line) {
+        $line = trim($line);
+        if ($line === '') {
+            continue;
+        }
+        // Normaliza guiones tipográficos pegados desde docs/Word.
+        $line = str_replace(["\u{2011}", "\u{2013}", "\u{2014}"], '-', $line);
+        $out[] = $line;
+    }
+
+    return $out;
 }
 
 function pretty_json(string $raw): string
@@ -186,6 +237,7 @@ $selected = $_POST['endpoint'] ?? array_key_first($ENDPOINTS);
 $reqUrl   = '';
 $reqMethod = '';
 $reqBodySent = '';
+$action = $_POST['action'] ?? 'switch';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $baseUrl = trim($_POST['baseUrl'] ?? $defaultBaseUrl);
@@ -193,7 +245,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $_SESSION['baseUrl'] = $baseUrl;
     $_SESSION['token']   = $token;
 
-    if (isset($ENDPOINTS[$selected])) {
+    // Solo llama a la API al pulsar "Enviar solicitud" (no al cambiar de endpoint).
+    if ($action === 'send' && isset($ENDPOINTS[$selected])) {
         $def = $ENDPOINTS[$selected];
 
         $paramValues = [];
@@ -207,7 +260,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         $extraHeadersRaw = $_POST['extra_headers'] ?? '';
-        $extraHeaders    = array_filter(array_map('trim', explode("\n", $extraHeadersRaw)));
+        $extraHeaders    = parse_extra_headers($extraHeadersRaw);
 
         $url = build_url($baseUrl, $def['path'], $paramValues);
         $reqUrl    = $url;
@@ -376,19 +429,20 @@ $currentDef = $ENDPOINTS[$selected] ?? reset($ENDPOINTS);
       <label for="token">Bearer Token</label>
       <input type="password" id="token" name="token" value="<?= h($defaultToken) ?>" placeholder="Pega aquí tu token de API">
 
-      <label for="extra_headers">Headers extra (uno por línea, "Nombre: valor")</label>
-      <textarea id="extra_headers" name="extra_headers" style="min-height:60px" placeholder="Idempotency-Key: 123e4567-e89b-12d3-a456-426614174000"><?= h($_POST['extra_headers'] ?? '') ?></textarea>
+      <label for="extra_headers">Headers extra (uno por línea). En POST la API exige <code>Idempotency-Key</code>; si lo dejas vacío, el tester lo genera solo.</label>
+      <textarea id="extra_headers" name="extra_headers" style="min-height:60px"><?= h($_POST['extra_headers'] ?? '') ?></textarea>
     </div>
 
     <div class="panel">
       <label for="endpoint">Endpoint</label>
-      <select id="endpoint" name="endpoint" onchange="document.getElementById('testerForm').submit()">
+      <select id="endpoint" name="endpoint" onchange="document.getElementById('actionSwitch').click()">
         <?php foreach ($ENDPOINTS as $key => $def): ?>
           <option value="<?= h($key) ?>" <?= $key === $selected ? 'selected' : '' ?>>
             <?= h($def['label']) ?>
           </option>
         <?php endforeach; ?>
       </select>
+      <button type="submit" name="action" value="switch" id="actionSwitch" style="display:none" tabindex="-1" aria-hidden="true">Cambiar</button>
 
       <div class="endpoint-line">
         <span class="method-badge m-<?= h($currentDef['method']) ?>"><?= h($currentDef['method']) ?></span>
@@ -398,9 +452,13 @@ $currentDef = $ENDPOINTS[$selected] ?? reset($ENDPOINTS);
       <?php if (!empty($currentDef['params'])): ?>
         <fieldset>
           <legend>Parámetros de ruta</legend>
+          <p style="margin:0 0 8px;font-size:12px;color:var(--muted);">
+            Usa el <code>publicId</code> real de <strong>Instancias · Listar</strong> (no un ejemplo inventado).
+          </p>
           <?php foreach ($currentDef['params'] as $paramKey => $paramDefault): ?>
             <label for="param_<?= h($paramKey) ?>"><?= h($paramKey) ?></label>
             <input type="text" id="param_<?= h($paramKey) ?>" name="param_<?= h($paramKey) ?>"
+                   placeholder="pega aquí el publicId de GET /instances"
                    value="<?= h($_POST['param_' . $paramKey] ?? $paramDefault) ?>">
           <?php endforeach; ?>
         </fieldset>
@@ -408,10 +466,15 @@ $currentDef = $ENDPOINTS[$selected] ?? reset($ENDPOINTS);
 
       <?php if ($currentDef['body'] !== null): ?>
         <label for="body">Body (JSON)</label>
+        <?php if ($selected === 'messages_send'): ?>
+          <p style="margin:0 0 6px;font-size:12px;color:var(--muted);">
+            Completa <code>instancePublicId</code> con el de tu instancia (<strong>Instancias · Listar</strong>).
+          </p>
+        <?php endif; ?>
         <textarea id="body" name="body"><?= h($_POST['body'] ?? $currentDef['body']) ?></textarea>
       <?php endif; ?>
 
-      <button type="submit">Enviar solicitud</button>
+      <button type="submit" name="action" value="send">Enviar solicitud</button>
     </div>
   </div>
 
@@ -434,6 +497,9 @@ $currentDef = $ENDPOINTS[$selected] ?? reset($ENDPOINTS);
         <div><b>URL:</b> <?= h($reqUrl) ?></div>
         <div><b>Tiempo:</b> <?= h((string)$result['elapsed_ms']) ?> ms</div>
       </div>
+
+      <label>Request headers enviados</label>
+      <pre><?= h(implode("\n", $result['request_headers'] ?? [])) ?></pre>
 
       <?php if ($reqBodySent !== ''): ?>
         <label>Body enviado</label>
