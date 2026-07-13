@@ -226,6 +226,20 @@ function h(string $s): string
     return htmlspecialchars($s, ENT_QUOTES, 'UTF-8');
 }
 
+function redact_request_headers(array $headers): array
+{
+    $out = [];
+    foreach ($headers as $header) {
+        if (stripos($header, 'Authorization:') === 0) {
+            $out[] = 'Authorization: Bearer ••••• (presente)';
+        } else {
+            $out[] = $header;
+        }
+    }
+
+    return $out;
+}
+
 // -------------------------------------------------------------------
 // Persistencia simple en sesión (para no reescribir base URL/token)
 // -------------------------------------------------------------------
@@ -238,12 +252,21 @@ $reqUrl   = '';
 $reqMethod = '';
 $reqBodySent = '';
 $action = $_POST['action'] ?? 'switch';
+$tokenMissing = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $baseUrl = trim($_POST['baseUrl'] ?? $defaultBaseUrl);
-    $token   = trim($_POST['token'] ?? '');
+    // Los navegadores a veces envían el input password vacío (autofill / iframe)
+    // al cambiar de endpoint. No pisar el token bueno de sesión en ese caso.
+    $tokenPosted = trim($_POST['token'] ?? '');
+    if ($tokenPosted !== '') {
+        $_SESSION['token'] = $tokenPosted;
+    }
     $_SESSION['baseUrl'] = $baseUrl;
-    $_SESSION['token']   = $token;
+
+    $token = trim((string) ($_SESSION['token'] ?? ''));
+    $defaultToken = $token;
+    $defaultBaseUrl = $baseUrl;
 
     // Solo llama a la API al pulsar "Enviar solicitud" (no al cambiar de endpoint).
     if ($action === 'send' && isset($ENDPOINTS[$selected])) {
@@ -267,7 +290,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $reqMethod = $def['method'];
         $reqBodySent = $body ?? '';
 
-        $result = do_request($def['method'], $url, $token !== '' ? $token : null, $body, $extraHeaders);
+        if ($token === '') {
+            $tokenMissing = true;
+            $result = [
+                'ok'              => true,
+                'error'           => null,
+                'status'          => 401,
+                'headers'         => '',
+                'body'            => json_encode([
+                    'message' => 'Unauthenticated.',
+                    'hint' => 'El tester no envió Authorization. Vuelve a pegar el Bearer Token y pulsa Enviar (no dejes el campo vacío).',
+                ], JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES),
+                'elapsed_ms'      => 0,
+                'request_headers' => ['Accept: application/json'],
+            ];
+        } else {
+            $result = do_request($def['method'], $url, $token, $body, $extraHeaders);
+        }
     }
 }
 
@@ -427,7 +466,13 @@ $currentDef = $ENDPOINTS[$selected] ?? reset($ENDPOINTS);
       <input type="text" id="baseUrl" name="baseUrl" value="<?= h($defaultBaseUrl) ?>">
 
       <label for="token">Bearer Token</label>
-      <input type="password" id="token" name="token" value="<?= h($defaultToken) ?>" placeholder="Pega aquí tu token de API">
+      <input type="text" id="token" name="token" value="<?= h($defaultToken) ?>"
+             autocomplete="off" spellcheck="false"
+             placeholder="Pega aquí tu token de API (15|…)"
+             style="font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">
+      <p style="margin:6px 0 0;font-size:11px;color:var(--muted);">
+        Si ves puntos grises del navegador pero al enviar falta <code>Authorization</code>, borra el campo y pega el token de nuevo.
+      </p>
 
       <label for="extra_headers">Headers extra (uno por línea). En POST la API exige <code>Idempotency-Key</code>; si lo dejas vacío, el tester lo genera solo.</label>
       <textarea id="extra_headers" name="extra_headers" style="min-height:60px"><?= h($_POST['extra_headers'] ?? '') ?></textarea>
@@ -498,8 +543,14 @@ $currentDef = $ENDPOINTS[$selected] ?? reset($ENDPOINTS);
         <div><b>Tiempo:</b> <?= h((string)$result['elapsed_ms']) ?> ms</div>
       </div>
 
+      <?php if ($tokenMissing): ?>
+        <p style="color:var(--err);font-size:13px;margin:10px 0;">
+          No se envió el Bearer Token. Pégalo otra vez en el campo de la izquierda y vuelve a enviar.
+        </p>
+      <?php endif; ?>
+
       <label>Request headers enviados</label>
-      <pre><?= h(implode("\n", $result['request_headers'] ?? [])) ?></pre>
+      <pre><?= h(implode("\n", redact_request_headers($result['request_headers'] ?? []))) ?></pre>
 
       <?php if ($reqBodySent !== ''): ?>
         <label>Body enviado</label>
