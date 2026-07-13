@@ -62,7 +62,7 @@ $ENDPOINTS = [
         'label'  => 'Mensajes · Enviar',
         'method' => 'POST',
         'path'   => '/api/v1/messages',
-        'body'   => "{\n  \"recipient\": \"5215512345678\",\n  \"body\": \"Hola desde tester.php\",\n  \"instancePublicId\": \"\"\n}",
+        'body'   => "{\n  \"recipient\": \"5218116642117\",\n  \"body\": \"Hola desde tester.php\",\n  \"instancePublicId\": \"\"\n}",
         'params' => [],
     ],
     'messages_show' => [
