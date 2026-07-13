@@ -296,16 +296,15 @@ export default function DemoSandbox() {
       {step === 'send' && instance && (
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
           <label className="block text-sm font-medium text-slate-700" htmlFor="recipient">
-            Tu número WhatsApp (E.164 sin +)
+            Destinatario (teléfono E.164 o ID de grupo @g.us)
           </label>
           <input
             id="recipient"
-            type="tel"
-            inputMode="numeric"
+            type="text"
             className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm"
-            placeholder="5215512345678"
+            placeholder="5215512345678 o 120363…@g.us"
             value={recipient}
-            onChange={(e) => setRecipient(e.target.value.replace(/[^\d]/g, ''))}
+            onChange={(e) => setRecipient(e.target.value)}
           />
           <label className="block text-sm font-medium text-slate-700" htmlFor="body">
             Mensaje
@@ -320,7 +319,7 @@ export default function DemoSandbox() {
           <div className="flex gap-3">
             <button
               type="button"
-              disabled={loading || recipient.length < 10}
+              disabled={loading || recipient.trim().length < 10}
               onClick={() => void handleSend()}
               className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-50"
             >
@@ -341,7 +340,10 @@ export default function DemoSandbox() {
             <div>
               <h2 className="text-lg font-semibold text-emerald-900">¡Mensaje encolado!</h2>
               <p className="text-sm text-emerald-800 mt-1">
-                Revisa WhatsApp en <strong>{sentMessage.recipient}</strong>. Estado: <strong>{sentMessage.status}</strong>
+                {sentMessage.recipient.includes('@g.us')
+                  ? <>Revisa el grupo <strong>{sentMessage.recipient}</strong>.</>
+                  : <>Revisa WhatsApp en <strong>{sentMessage.recipient}</strong>.</>}
+                {' '}Estado: <strong>{sentMessage.status}</strong>
                 {sentMessage.status === 'queued' && ' (procesando en segundos…)'}
               </p>
             </div>

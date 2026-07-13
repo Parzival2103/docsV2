@@ -62,6 +62,7 @@ $ENDPOINTS = [
         'label'  => 'Mensajes · Enviar',
         'method' => 'POST',
         'path'   => '/api/v1/messages',
+        // Alternativa grupo: "recipient": "120363012345678901@g.us"
         'body'   => "{\n  \"recipient\": \"5218116642117\",\n  \"body\": \"Hola desde tester.php\",\n  \"instancePublicId\": \"\"\n}",
         'params' => [],
     ],
