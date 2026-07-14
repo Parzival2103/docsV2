@@ -345,7 +345,7 @@ Consulta **Autenticación**, **Instancias** y **Mensajes** para el detalle compl
     markdown: `
 # Autenticación
 
-Todas las rutas bajo \`/api/v1\` requieren **Bearer Token** (Laravel Sanctum).
+Todas las rutas bajo \`/api/v1\` requieren **Bearer Token**.
 
 ## Header de autenticación
 
@@ -353,7 +353,7 @@ Todas las rutas bajo \`/api/v1\` requieren **Bearer Token** (Laravel Sanctum).
 Authorization: Bearer {token}
 \`\`\`
 
-El token puede ser el valor completo emitido por Sanctum (incluye \`id|\` al inicio si aplica).
+El token es el valor completo emitido por Lebytek (incluye \`id|\` al inicio).
 
 ## Headers recomendados
 
@@ -362,7 +362,7 @@ El token puede ser el valor completo emitido por Sanctum (incluye \`id|\` al ini
 | \`Authorization: Bearer {token}\` | Siempre |
 | \`Accept: application/json\` | Siempre |
 | \`Content-Type: application/json\` | POST, PUT, PATCH con cuerpo |
-| \`Idempotency-Key: {uuid}\` | **Obligatorio** en POST, PUT, PATCH (422 si falta) |
+| \`Idempotency-Key: {uuid}\` | **Obligatorio** en POST, PUT, PATCH (Error **HTTP 422** si falta) |
 
 ## Permisos del token
 
@@ -493,7 +493,7 @@ $response = Http::withToken($token)
     markdown: `
 # Instancias
 
-Una instancia es la línea de WhatsApp vinculada a tu tenant. Los identificadores en JSON y URL usan \`publicId\` (campo \`public_id\` en base de datos).
+Una instancia es la línea telefonica de WhatsApp vinculada a tu tenant. Los identificadores en JSON y URL usan \`publicId\` 
 
 > 🚨 **\`tenantPublicId\` ≠ \`instancePublicId\`:** El \`publicId\` de esta sección es siempre el de **instancia**. Obtén el valor con \`GET /instances\` → \`data[].publicId\` y úsalo en rutas \`/instances/{publicId}\` y en \`instancePublicId\` al enviar mensajes.
 
