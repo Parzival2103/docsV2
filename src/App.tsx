@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Menu, Search } from 'lucide-react';
+import { Menu } from 'lucide-react';
 import Sidebar from './components/Sidebar';
 import DocViewer from './components/DocViewer';
+import DocSearch from './components/DocSearch';
 import DemoSandbox from './components/Sandbox/DemoSandbox';
 import ApiTester from './components/ApiTester';
 import { NAVIGATION, DOCS_DATABASE } from './data';
@@ -35,7 +36,6 @@ export default function App() {
 
   return (
     <div className="flex h-dvh overflow-hidden bg-slate-50 font-sans">
-      {/* Sidebar Navigation */}
       <Sidebar 
         navigation={NAVIGATION} 
         currentDocId={currentDocId} 
@@ -44,7 +44,6 @@ export default function App() {
         onClose={() => setIsMobileMenuOpen(false)}
       />
 
-      {/* Main Content Area — only this column scrolls */}
       <div className="flex min-h-0 min-w-0 flex-1 flex-col">
         <header className="z-30 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md sm:px-8">
           <div className="flex items-center gap-4">
@@ -55,18 +54,7 @@ export default function App() {
               <Menu className="w-5 h-5" />
             </button>
             
-            {/* Search Placeholder */}
-            <div className="hidden sm:flex items-center gap-2 text-slate-400 bg-slate-100 px-3 py-1.5 rounded-md text-sm border border-slate-200 w-64 focus-within:ring-2 focus-within:ring-indigo-500/20 focus-within:border-indigo-500 transition-all">
-              <Search className="w-4 h-4" />
-              <input 
-                type="text" 
-                placeholder="Buscar documentación..." 
-                className="bg-transparent border-none outline-none text-slate-700 w-full placeholder-slate-400"
-              />
-              <span className="hidden lg:flex items-center gap-0.5 text-xs border border-slate-200 bg-white px-1.5 py-0.5 rounded shadow-sm">
-                <span className="text-[10px]">⌘</span>K
-              </span>
-            </div>
+            <DocSearch onSelectDoc={handleSelectDoc} />
           </div>
 
           <div className="flex items-center gap-4">

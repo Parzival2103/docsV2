@@ -49,8 +49,10 @@ export default function DemoSandbox() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
+  const [qrEpoch, setQrEpoch] = useState(0);
   const lastQrFetch = useRef(0);
   const qrRequestId = useRef(0);
+  const qrInflight = useRef(0);
   const instanceRef = useRef<InstanceResource | null>(null);
   const tokenRef = useRef(token);
   const hasQrRef = useRef(false);
@@ -81,6 +83,7 @@ export default function DemoSandbox() {
 
       if (fresh.status === 'authorized') {
         setQrDataUrl(null);
+        hasQrRef.current = false;
       }
     } catch (e) {
       sessionStorage.removeItem(STORAGE_KEY);
@@ -99,6 +102,7 @@ export default function DemoSandbox() {
     if (!force && now - lastQrFetch.current < QR_COOLDOWN_MS) return;
 
     const requestId = ++qrRequestId.current;
+    qrInflight.current += 1;
     setQrLoading(true);
     if (force) clearError();
 
@@ -110,11 +114,13 @@ export default function DemoSandbox() {
 
       if (fresh.status === 'authorized') {
         setQrDataUrl(null);
+        hasQrRef.current = false;
         clearError();
         return;
       }
 
-      const qr = await getQr(currentToken, currentInstance.publicId);
+      // force=true pide un QR nuevo a Green (evita devolver el PNG cacheado ~20s).
+      const qr = await getQr(currentToken, currentInstance.publicId, { force });
       if (requestId !== qrRequestId.current) return;
 
       lastQrFetch.current = Date.now();
@@ -124,6 +130,7 @@ export default function DemoSandbox() {
       }
       setQrDataUrl(`data:image/png;base64,${qr.qr}`);
       hasQrRef.current = true;
+      setQrEpoch((n) => n + 1);
       clearError();
     } catch (e) {
       if (requestId !== qrRequestId.current) return;
@@ -137,14 +144,14 @@ export default function DemoSandbox() {
           hasQrRef.current = false;
           clearError();
         } else if (!hasQrRef.current) {
-          // Solo mostrar si aún no hay QR visible (evita error fantasma por carrera).
           setError('Instancia no lista para QR. Espera unos segundos e intenta de nuevo.');
         }
       } else if (!hasQrRef.current) {
         setError(e instanceof LebytekApiError ? e.message : (e as Error).message);
       }
     } finally {
-      if (requestId === qrRequestId.current) {
+      qrInflight.current = Math.max(0, qrInflight.current - 1);
+      if (qrInflight.current === 0) {
         setQrLoading(false);
       }
     }
@@ -168,15 +175,17 @@ export default function DemoSandbox() {
           setInstance(fresh);
           if (fresh.status === 'authorized') {
             setQrDataUrl(null);
+            hasQrRef.current = false;
             clearError();
           }
         })
         .catch(() => undefined);
     }, 8000);
 
+    // Green QR ~20s: forzar nuevo código antes de que expire el cacheado.
     const qrInterval = window.setInterval(() => {
-      if (!cancelled) void refreshQr(false);
-    }, 20000);
+      if (!cancelled) void refreshQr(true);
+    }, 18000);
 
     return () => {
       cancelled = true;
@@ -184,7 +193,6 @@ export default function DemoSandbox() {
       clearInterval(statusInterval);
       clearInterval(qrInterval);
     };
-    // refreshQr intentionally omitted: instanceRef/tokenRef keep it current without re-arming intervals.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step, instance?.publicId, instance?.status, token]);
 
@@ -320,7 +328,12 @@ export default function DemoSandbox() {
                   WhatsApp → Dispositivos vinculados → Vincular dispositivo
                 </p>
                 {qrDataUrl ? (
-                  <img src={qrDataUrl} alt="QR WhatsApp" className="mx-auto max-w-[240px] rounded-lg border border-slate-200 bg-white p-2" />
+                  <img
+                    key={qrEpoch}
+                    src={qrDataUrl}
+                    alt="QR WhatsApp"
+                    className="mx-auto max-w-[240px] rounded-lg border border-slate-200 bg-white p-2"
+                  />
                 ) : (
                   <div className="py-12 text-slate-400 flex justify-center">
                     {qrLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : 'Generando QR…'}
@@ -332,7 +345,7 @@ export default function DemoSandbox() {
                   onClick={() => void refreshQr(true)}
                   className="text-sm text-indigo-600 hover:underline disabled:opacity-50"
                 >
-                  Refrescar QR
+                  {qrLoading ? 'Actualizando…' : 'Refrescar QR'}
                 </button>
               </div>
             </>
