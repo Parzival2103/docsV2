@@ -158,8 +158,13 @@ export async function getInstance(token: string, publicId: string): Promise<Inst
   return data;
 }
 
-export async function getQr(token: string, publicId: string): Promise<QrResponse> {
-  const { data } = await lebytekFetch<QrResponse>(token, 'GET', `/instances/${publicId}/qr`);
+export async function getQr(
+  token: string,
+  publicId: string,
+  options?: { force?: boolean },
+): Promise<QrResponse> {
+  const query = options?.force ? '?force=1' : '';
+  const { data } = await lebytekFetch<QrResponse>(token, 'GET', `/instances/${publicId}/qr${query}`);
   return data;
 }
 
