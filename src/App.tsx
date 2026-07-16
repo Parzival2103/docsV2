@@ -34,7 +34,7 @@ export default function App() {
   const currentDoc = DOCS_DATABASE[currentDocId];
 
   return (
-    <div className="flex min-h-screen bg-slate-50 font-sans">
+    <div className="flex h-dvh overflow-hidden bg-slate-50 font-sans">
       {/* Sidebar Navigation */}
       <Sidebar 
         navigation={NAVIGATION} 
@@ -44,10 +44,9 @@ export default function App() {
         onClose={() => setIsMobileMenuOpen(false)}
       />
 
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Header */}
-        <header className="h-16 border-b border-slate-200 bg-white/80 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-8">
+      {/* Main Content Area — only this column scrolls */}
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+        <header className="z-30 flex h-16 shrink-0 items-center justify-between border-b border-slate-200 bg-white/80 px-4 backdrop-blur-md sm:px-8">
           <div className="flex items-center gap-4">
             <button 
               onClick={() => setIsMobileMenuOpen(true)}
@@ -77,8 +76,7 @@ export default function App() {
           </div>
         </header>
 
-        {/* Documentation Content */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-8 lg:p-12">
+        <main className="min-h-0 flex-1 overflow-y-auto p-4 sm:p-8 lg:p-12">
           {currentDocId === 'sandbox' ? (
             <DemoSandbox />
           ) : currentDocId === 'tester' ? (

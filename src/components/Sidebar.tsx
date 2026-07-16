@@ -22,16 +22,16 @@ export default function Sidebar({ navigation, currentDocId, onSelectDoc, isOpen,
         />
       )}
 
-      {/* Sidebar Content */}
+      {/* Sidebar: drawer on mobile; in-flow column on desktop (scrolls its own nav) */}
       <aside 
         className={`
-          fixed top-0 left-0 z-50 h-screen w-72 bg-white border-r border-slate-200 
-          transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:z-0
-          overflow-y-auto flex flex-col
+          fixed inset-y-0 left-0 z-50 flex h-dvh w-72 shrink-0 flex-col border-r border-slate-200 bg-white
+          transform transition-transform duration-300 ease-in-out
+          lg:static lg:z-0 lg:translate-x-0
           ${isOpen ? 'translate-x-0' : '-translate-x-full'}
         `}
       >
-        <div className="p-6 flex items-center gap-3 sticky top-0 bg-white z-10 border-b border-slate-100">
+        <div className="z-10 flex shrink-0 items-center gap-3 border-b border-slate-100 bg-white p-6">
           <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200">
             <BookOpen className="w-5 h-5 text-white" />
           </div>
@@ -40,7 +40,7 @@ export default function Sidebar({ navigation, currentDocId, onSelectDoc, isOpen,
           </span>
         </div>
 
-        <nav className="p-4 flex-1">
+        <nav className="min-h-0 flex-1 overflow-y-auto p-4">
           {navigation.map((section, idx) => (
             <div key={section.title} className="mb-8">
               <h3 className="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-3">
@@ -82,7 +82,7 @@ export default function Sidebar({ navigation, currentDocId, onSelectDoc, isOpen,
           ))}
         </nav>
         
-        <div className="p-4 border-t border-slate-200 bg-slate-50">
+        <div className="shrink-0 border-t border-slate-200 bg-slate-50 p-4">
           <div className="text-xs text-slate-500 flex flex-col gap-1">
             <p>Conectado a GitHub/VPS</p>
             <p className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-emerald-500"></span> Sincronizado</p>

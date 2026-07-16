@@ -50,6 +50,14 @@ export default function DemoSandbox() {
   const [loading, setLoading] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
   const lastQrFetch = useRef(0);
+  const qrRequestId = useRef(0);
+  const instanceRef = useRef<InstanceResource | null>(null);
+  const tokenRef = useRef(token);
+  const hasQrRef = useRef(false);
+
+  instanceRef.current = instance;
+  tokenRef.current = token;
+  hasQrRef.current = qrDataUrl !== null;
 
   const clearError = () => setError(null);
 
@@ -83,64 +91,117 @@ export default function DemoSandbox() {
   }, []);
 
   const refreshQr = useCallback(async (force = false) => {
-    if (!token || !instance) return;
+    const currentToken = tokenRef.current;
+    const currentInstance = instanceRef.current;
+    if (!currentToken || !currentInstance) return;
+
     const now = Date.now();
     if (!force && now - lastQrFetch.current < QR_COOLDOWN_MS) return;
 
+    const requestId = ++qrRequestId.current;
     setQrLoading(true);
-    clearError();
+    if (force) clearError();
+
     try {
-      const fresh = await getInstance(token, instance.publicId);
+      const fresh = await getInstance(currentToken, currentInstance.publicId);
+      if (requestId !== qrRequestId.current) return;
+
       setInstance(fresh);
 
       if (fresh.status === 'authorized') {
         setQrDataUrl(null);
+        clearError();
         return;
       }
 
-      const qr = await getQr(token, instance.publicId);
+      const qr = await getQr(currentToken, currentInstance.publicId);
+      if (requestId !== qrRequestId.current) return;
+
       lastQrFetch.current = Date.now();
+      if (!qr.qr) {
+        setError('La API devolvió un QR vacío. Intenta refrescar en unos segundos.');
+        return;
+      }
       setQrDataUrl(`data:image/png;base64,${qr.qr}`);
+      hasQrRef.current = true;
+      clearError();
     } catch (e) {
+      if (requestId !== qrRequestId.current) return;
+
       if (e instanceof LebytekApiError && e.status === 409) {
-        const fresh = await getInstance(token, instance.publicId);
+        const fresh = await getInstance(currentToken, currentInstance.publicId);
+        if (requestId !== qrRequestId.current) return;
         setInstance(fresh);
-        if (fresh.status === 'authorized') setQrDataUrl(null);
-        else setError('Instancia no lista para QR. Espera unos segundos e intenta de nuevo.');
-      } else {
+        if (fresh.status === 'authorized') {
+          setQrDataUrl(null);
+          hasQrRef.current = false;
+          clearError();
+        } else if (!hasQrRef.current) {
+          // Solo mostrar si aún no hay QR visible (evita error fantasma por carrera).
+          setError('Instancia no lista para QR. Espera unos segundos e intenta de nuevo.');
+        }
+      } else if (!hasQrRef.current) {
         setError(e instanceof LebytekApiError ? e.message : (e as Error).message);
       }
     } finally {
-      setQrLoading(false);
+      if (requestId === qrRequestId.current) {
+        setQrLoading(false);
+      }
     }
-  }, [token, instance]);
+  }, []);
 
   useEffect(() => {
     if (step !== 'link' || !instance || instance.status === 'authorized') return;
 
+    let cancelled = false;
+
     void refreshQr(true);
-    const interval = window.setInterval(() => {
-      void getInstance(token, instance.publicId)
+
+    const statusInterval = window.setInterval(() => {
+      const currentToken = tokenRef.current;
+      const currentInstance = instanceRef.current;
+      if (!currentToken || !currentInstance) return;
+
+      void getInstance(currentToken, currentInstance.publicId)
         .then((fresh) => {
+          if (cancelled) return;
           setInstance(fresh);
-          if (fresh.status === 'authorized') setQrDataUrl(null);
+          if (fresh.status === 'authorized') {
+            setQrDataUrl(null);
+            clearError();
+          }
         })
         .catch(() => undefined);
     }, 8000);
 
-    const qrInterval = window.setInterval(() => void refreshQr(), 20000);
+    const qrInterval = window.setInterval(() => {
+      if (!cancelled) void refreshQr(false);
+    }, 20000);
 
     return () => {
-      clearInterval(interval);
+      cancelled = true;
+      qrRequestId.current += 1;
+      clearInterval(statusInterval);
       clearInterval(qrInterval);
     };
-  }, [step, instance?.publicId, instance?.status, token, refreshQr]);
+    // refreshQr intentionally omitted: instanceRef/tokenRef keep it current without re-arming intervals.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, instance?.publicId, instance?.status, token]);
 
   const handleSend = async () => {
     if (!token || !instance) return;
     clearError();
     setLoading(true);
     try {
+      // Revalidar estado real antes de enviar (evita authorized obsoleto en BD).
+      const fresh = await getInstance(token, instance.publicId);
+      setInstance(fresh);
+      if (fresh.status !== 'authorized') {
+        setStep('link');
+        setError('La instancia ya no está autorizada. Escanea el QR de nuevo.');
+        return;
+      }
+
       const msg = await sendMessage(token, instance.publicId, recipient, messageBody);
       setSentMessage(msg);
       setStep('done');
@@ -165,6 +226,7 @@ export default function DemoSandbox() {
 
   const resetSandbox = () => {
     sessionStorage.removeItem(STORAGE_KEY);
+    qrRequestId.current += 1;
     setToken('');
     setInstance(null);
     setQrDataUrl(null);
@@ -334,21 +396,47 @@ export default function DemoSandbox() {
       )}
 
       {step === 'done' && sentMessage && (
-        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-6 shadow-sm space-y-4">
+        <div className={`rounded-xl border p-6 shadow-sm space-y-4 ${
+          sentMessage.status === 'failed'
+            ? 'border-red-200 bg-red-50'
+            : 'border-emerald-200 bg-emerald-50'
+        }`}>
           <div className="flex gap-3">
-            <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+            {sentMessage.status === 'failed' ? (
+              <AlertCircle className="w-6 h-6 text-red-600 shrink-0" />
+            ) : (
+              <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0" />
+            )}
             <div>
-              <h2 className="text-lg font-semibold text-emerald-900">¡Mensaje encolado!</h2>
-              <p className="text-sm text-emerald-800 mt-1">
-                {sentMessage.recipient.includes('@g.us')
-                  ? <>Revisa el grupo <strong>{sentMessage.recipient}</strong>.</>
-                  : <>Revisa WhatsApp en <strong>{sentMessage.recipient}</strong>.</>}
-                {' '}Estado: <strong>{sentMessage.status}</strong>
-                {sentMessage.status === 'queued' && ' (procesando en segundos…)'}
+              <h2 className={`text-lg font-semibold ${
+                sentMessage.status === 'failed' ? 'text-red-900' : 'text-emerald-900'
+              }`}>
+                {sentMessage.status === 'failed'
+                  ? 'El mensaje no se pudo entregar'
+                  : sentMessage.status === 'sent'
+                    ? '¡Mensaje enviado!'
+                    : '¡Mensaje encolado!'}
+              </h2>
+              <p className={`text-sm mt-1 ${
+                sentMessage.status === 'failed' ? 'text-red-800' : 'text-emerald-800'
+              }`}>
+                {sentMessage.status === 'failed' && sentMessage.error
+                  ? sentMessage.error
+                  : (
+                    <>
+                      {sentMessage.recipient.includes('@g.us')
+                        ? <>Revisa el grupo <strong>{sentMessage.recipient}</strong>.</>
+                        : <>Revisa WhatsApp en <strong>{sentMessage.recipient}</strong>.</>}
+                      {' '}Estado: <strong>{sentMessage.status}</strong>
+                      {sentMessage.status === 'queued' && ' (procesando en segundos…)'}
+                    </>
+                  )}
               </p>
             </div>
           </div>
-          <pre className="text-xs font-mono bg-white/80 rounded-lg p-3 overflow-auto border border-emerald-100">
+          <pre className={`text-xs font-mono bg-white/80 rounded-lg p-3 overflow-auto border ${
+            sentMessage.status === 'failed' ? 'border-red-100' : 'border-emerald-100'
+          }`}>
             {JSON.stringify(sentMessage, null, 2)}
           </pre>
           <button type="button" onClick={resetSandbox} className="text-sm font-medium text-indigo-600 hover:underline">
