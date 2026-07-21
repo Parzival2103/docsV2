@@ -132,6 +132,8 @@ export interface InstanceResource {
   publicId: string;
   status: string;
   label?: string;
+  lastError?: string | null;
+  greenState?: string | null;
 }
 
 export interface QrResponse {

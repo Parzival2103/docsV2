@@ -81,6 +81,15 @@ export default function DemoSandbox() {
       setInstance(fresh);
       setStep('link');
 
+      if (fresh.status === 'failed') {
+        setError(
+          fresh.lastError
+            ? `La instancia demo falló al provisionarse en Green API: ${fresh.lastError}`
+            : 'La instancia demo falló al provisionarse. Contacta soporte o reintenta más tarde.',
+        );
+        return;
+      }
+
       if (fresh.status === 'authorized') {
         setQrDataUrl(null);
         hasQrRef.current = false;
@@ -159,6 +168,7 @@ export default function DemoSandbox() {
 
   useEffect(() => {
     if (step !== 'link' || !instance || instance.status === 'authorized') return;
+    if (instance.status === 'failed' || instance.status === 'deleted') return;
 
     let cancelled = false;
 
@@ -306,13 +316,26 @@ export default function DemoSandbox() {
             <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
               instance.status === 'authorized'
                 ? 'bg-emerald-100 text-emerald-800'
-                : 'bg-amber-100 text-amber-800'
+                : instance.status === 'failed'
+                  ? 'bg-red-100 text-red-800'
+                  : 'bg-amber-100 text-amber-800'
             }`}>
               {instance.status}
             </span>
           </div>
 
-          {instance.status === 'authorized' ? (
+          {instance.status === 'failed' ? (
+            <div className="flex gap-3 items-start rounded-lg bg-red-50 border border-red-200 p-4">
+              <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+              <div>
+                <p className="font-medium text-red-900">No se pudo crear la instancia en Green API</p>
+                <p className="text-sm text-red-800 mt-1">
+                  {instance.lastError
+                    ?? 'El proveedor devolvió un error al crear la instancia. Revisa con soporte o intenta más tarde.'}
+                </p>
+              </div>
+            </div>
+          ) : instance.status === 'authorized' ? (
             <div className="flex gap-3 items-start rounded-lg bg-emerald-50 border border-emerald-200 p-4">
               <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
               <div>
