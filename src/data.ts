@@ -945,7 +945,7 @@ La API responde JSON en rutas \`/api/*\`. Estructura verificada en middleware, c
 
 \`\`\`json
 {
-  "message": "No query results for model [App\\\\Models\\\\Integration\\\\Instancia] ..."
+  "message": "Resource not found."
 }
 \`\`\`
 
