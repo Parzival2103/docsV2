@@ -49,13 +49,18 @@ export default function DocViewer({ doc }: DocViewerProps) {
       );
     },
     a({ href, children, ...props }: any) {
-      const isDownload =
-        typeof href === 'string' &&
-        (href.includes('download=1') || href.includes('/downloads/'));
+      const isPhpDownload =
+        typeof href === 'string' && href.includes('download=1');
+      let downloadName: string | undefined;
+      if (isPhpDownload) {
+        downloadName = 'tester.php';
+      } else if (typeof href === 'string' && /\/tester\.(html|js)(?:\?|$)/.test(href)) {
+        downloadName = href.includes('tester.js') ? 'tester.js' : 'tester.html';
+      }
       return (
         <a
           href={href}
-          {...(isDownload ? { download: 'tester.php' } : {})}
+          {...(downloadName ? { download: downloadName } : {})}
           {...props}
         >
           {children}

@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>WhatsApiLebytek · API Tester</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  :root {
+    --bg: #0f1115;
+    --panel: #161923;
+    --panel-2: #1c202c;
+    --border: #2a2f3d;
+    --text: #e6e8ee;
+    --muted: #9aa1b2;
+    --accent: #6ea8fe;
+    --get: #3fb950;
+    --post: #58a6ff;
+    --put: #d29922;
+    --patch: #d29922;
+    --delete: #f85149;
+    --ok: #3fb950;
+    --err: #f85149;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    padding: 24px;
+  }
+  h1 {
+    font-size: 20px;
+    margin: 0 0 4px;
+  }
+  .sub { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+  .layout {
+    display: grid;
+    grid-template-columns: 340px 1fr;
+    gap: 20px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px;
+  }
+  .panel + .panel { margin-top: 16px; }
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    margin: 10px 0 4px;
+  }
+  input[type=text], input[type=password], select, textarea {
+    width: 100%;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  textarea {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-size: 12.5px;
+    min-height: 140px;
+    resize: vertical;
+  }
+  .row { display: flex; gap: 10px; }
+  .row > div { flex: 1; }
+  button {
+    margin-top: 16px;
+    width: 100%;
+    background: var(--accent);
+    color: #0b0d12;
+    border: none;
+    padding: 10px 14px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+  }
+  button:hover { filter: brightness(1.08); }
+  button:disabled { opacity: 0.65; cursor: wait; }
+  .method-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 700;
+    color: #0b0d12;
+  }
+  .m-GET { background: var(--get); }
+  .m-POST { background: var(--post); }
+  .m-PUT { background: var(--put); }
+  .m-PATCH { background: var(--patch); }
+  .m-DELETE { background: var(--delete); }
+  .endpoint-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    font-size: 12.5px;
+    color: var(--muted);
+    word-break: break-all;
+  }
+  .status-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 6px;
+    font-weight: 700;
+    font-size: 13px;
+  }
+  .status-2xx { background: rgba(63,185,80,.15); color: var(--ok); border: 1px solid rgba(63,185,80,.4); }
+  .status-4xx, .status-5xx { background: rgba(248,81,73,.15); color: var(--err); border: 1px solid rgba(248,81,73,.4); }
+  .status-err { background: rgba(248,81,73,.15); color: var(--err); border: 1px solid rgba(248,81,73,.4); }
+  pre {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px;
+    overflow-x: auto;
+    font-size: 12.5px;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .meta { display: flex; gap: 16px; flex-wrap: wrap; margin: 10px 0; font-size: 12.5px; color: var(--muted); }
+  .meta b { color: var(--text); }
+  .empty { color: var(--muted); font-size: 13px; padding: 20px 0; text-align: center; }
+  fieldset { border: 1px solid var(--border); border-radius: 8px; margin-top: 10px; padding: 10px 12px; }
+  legend { color: var(--muted); font-size: 12px; padding: 0 6px; }
+</style>
+</head>
+<body>
+
+<h1>WhatsApiLebytek · API Tester</h1>
+<div class="sub">
+  Tester de cliente Lebytek (HTML + JS) — endpoints de tenant (instancias, mensajes, cuenta, uso).
+  Sin Node ni dependencias. Sirve estos archivos desde un host estático (no abras <code>file://</code> contra la API).
+</div>
+
+<form id="testerForm" action="#" method="get">
+<div class="layout">
+
+  <!-- Panel izquierdo: configuración -->
+  <div>
+    <div class="panel">
+      <label for="baseUrl">Base URL</label>
+      <input type="text" id="baseUrl" name="baseUrl" value="https://api.lebytek.com">
+
+      <label for="token">Bearer Token</label>
+      <input type="text" id="token" name="token" value=""
+             autocomplete="off" spellcheck="false"
+             placeholder="Pega aquí tu token de API (15|…)"
+             style="font-family: ui-monospace, SFMono-Regular, Consolas, monospace;">
+      <p style="margin:6px 0 0;font-size:11px;color:var(--muted);">
+        Si ves puntos grises del navegador pero al enviar falta <code>Authorization</code>, borra el campo y pega el token de nuevo.
+        El token se guarda en <code>localStorage</code> de este origen.
+      </p>
+
+      <label for="extra_headers">Headers extra (uno por línea). En POST la API exige <code>Idempotency-Key</code>; si lo dejas vacío, el tester lo genera solo.</label>
+      <textarea id="extra_headers" name="extra_headers" style="min-height:60px"></textarea>
+    </div>
+
+    <div class="panel">
+      <label for="endpoint">Endpoint</label>
+      <select id="endpoint" name="endpoint"></select>
+
+      <div class="endpoint-line">
+        <span id="methodBadge" class="method-badge m-GET">GET</span>
+        <span id="pathLabel">/api/v1/…</span>
+      </div>
+
+      <fieldset id="paramsBox" hidden></fieldset>
+
+      <div id="bodyBox" hidden>
+        <label for="body">Body (JSON)</label>
+        <p id="bodyHint" hidden style="margin:0 0 6px;font-size:12px;color:var(--muted);">
+          Completa <code>instancePublicId</code> con el de tu instancia (<strong>Instancias · Listar</strong>).
+        </p>
+        <textarea id="body" name="body"></textarea>
+      </div>
+
+      <button type="button" id="sendBtn">Enviar solicitud</button>
+    </div>
+  </div>
+
+  <!-- Panel derecho: resultado -->
+  <div class="panel" id="resultPanel">
+    <div class="empty">Configura la solicitud a la izquierda y presiona "Enviar solicitud".</div>
+  </div>
+
+</div>
+</form>
+
+<script src="./tester.js"></script>
+</body>
+</html>

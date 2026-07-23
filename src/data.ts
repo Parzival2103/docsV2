@@ -7,7 +7,7 @@ export const NAVIGATION: DocSection[] = [
       { id: "introduccion", title: "Introducción" },
       { id: "inicio-rapido", title: "Guía de inicio rápido" },
       { id: "sandbox", title: "Sandbox demo (5 min)" },
-      { id: "tester", title: "API Tester (PHP)" },
+      { id: "tester", title: "API Tester" },
     ]
   },
   {
@@ -73,7 +73,7 @@ Ejemplos de uso:
 4. Realizas peticiones HTTP para enviar mensajes.
 5. Consultas el estado de tus mensajes cuando lo necesites.
 
-> 💡 **Tip:** Si recibiste una demo, usa el **Sandbox** o el **[API Tester (PHP)](/#tester)** (también [descargable](/tester.php?download=1) para tu servidor).
+> 💡 **Tip:** Si recibiste una demo, usa el **Sandbox** o el **[API Tester](/#tester)** (HTML/JS o PHP; también [descargables](/tester.html) para tu servidor).
 
 ### ¿Qué sigue?
 
@@ -158,30 +158,39 @@ El sandbox solo llama a rutas de instancias y mensajes (las que permite tu token
 2. Lee **Autenticación**, **Instancias** y **Mensajes** para contratos JSON exactos.
 3. Para cuota y plan demo: **Cuenta y cuota** (\`POST /account/status\`).
 
-## API Tester (PHP)
+## API Tester
 
-Abre el **[API Tester](/#tester)** en esta documentación (misma UI embebida que \`/tester.php\`).
+Abre el **[API Tester](/#tester)** en esta documentación (pestañas **HTML/JS** y **PHP**).
 
-Para usarlo en **tu servidor**:
+### HTML + JS (recomendado en estáticos)
+
+1. [Descarga \`tester.html\`](/tester.html) y [\`tester.js\`](/tester.js) (mismo directorio)
+2. Sírvelos desde un host estático (o abre en docs: \`/tester.html\`)
+3. Pega Base URL + Bearer Token y elige el endpoint
+
+\`tester.js\` expone \`window.LebytekTester\` (ejemplos de uso en comentarios del archivo). No uses \`file://\` contra la API (CORS).
+
+### PHP
 
 1. [Descarga \`tester.php\`](/tester.php?download=1)
 2. Súbelo a tu host o ejecuta local: \`php -S localhost:8000\`
 3. Pega Base URL + Bearer Token y elige el endpoint
 
-Cubre instancias, mensajes, cuenta y uso. Para \`POST /messages\` añade en headers extra: \`Idempotency-Key: <uuid>\`.
+Cubre instancias, mensajes, cuenta y uso. Para writes, el tester genera \`Idempotency-Key\` si falta.
 
 > El sandbox es solo para validar credenciales demo. En producción no expongas el token en frontend público.
 `
   },
   "tester": {
     id: "tester",
-    title: "API Tester (PHP)",
+    title: "API Tester",
     markdown: `
-# API Tester (PHP)
+# API Tester
 
-La UI interactiva reemplaza esta página. Si no la ves, abre [/#tester](/#tester) o [tester.php](/tester.php).
+La UI interactiva reemplaza esta página. Si no la ves, abre [/#tester](/#tester).
 
-[Descargar tester.php](/tester.php?download=1) para ejecutarlo en tu propio servidor.
+- HTML/JS: [tester.html](/tester.html) + [tester.js](/tester.js)
+- PHP: [tester.php](/tester.php) · [descargar](/tester.php?download=1)
 `
   },
   "inicio-rapido": {
@@ -194,7 +203,7 @@ Esta guía refleja el flujo real verificado contra la implementación en \`api.l
 
 > 🚀 **¿Recibiste una demo?** Ten a la mano la URL base, tu token y el identificador público de instancia (\`publicId\`).
 
-> 🧰 **Tester PHP:** Abre el **[API Tester](/#tester)** en docs, o [descarga \`tester.php\`](/tester.php?download=1) para tu servidor.
+> 🧰 **API Tester:** Abre el **[API Tester](/#tester)** en docs (HTML/JS o PHP), o descarga [\`tester.html\`](/tester.html) + [\`tester.js\`](/tester.js) / [\`tester.php\`](/tester.php?download=1).
 
 ---
 
