@@ -357,10 +357,17 @@
         paramsBox.innerHTML = '';
       } else {
         paramsBox.hidden = false;
+        var isMessageParam = paramKeys.indexOf('mensaje_public_id') !== -1;
+        var hint = isMessageParam
+          ? 'Usa el <code>publicId</code> del <strong>mensaje</strong> (respuesta de <code>POST /messages</code> o consulta previa), no el de instancia.'
+          : 'Usa el <code>publicId</code> real de <strong>Instancias · Listar</strong> (no un ejemplo inventado).';
+        var placeholder = isMessageParam
+          ? 'pega el publicId del mensaje (POST /messages)'
+          : 'pega aquí el publicId de GET /instances';
         var html =
           '<legend>Parámetros de ruta</legend>' +
           '<p style="margin:0 0 8px;font-size:12px;color:var(--muted);">' +
-          'Usa el <code>publicId</code> real de <strong>Instancias · Listar</strong> (no un ejemplo inventado).' +
+          hint +
           '</p>';
         paramKeys.forEach(function (paramKey) {
           html +=
@@ -373,7 +380,9 @@
             escapeHtml(paramKey) +
             '" name="param_' +
             escapeHtml(paramKey) +
-            '" placeholder="pega aquí el publicId de GET /instances" value="">';
+            '" placeholder="' +
+            escapeHtml(placeholder) +
+            '" value="">';
         });
         paramsBox.innerHTML = html;
       }

@@ -498,13 +498,20 @@ $currentDef = $ENDPOINTS[$selected] ?? reset($ENDPOINTS);
       <?php if (!empty($currentDef['params'])): ?>
         <fieldset>
           <legend>Parámetros de ruta</legend>
+          <?php
+            $isMessageParam = array_key_exists('mensaje_public_id', $currentDef['params']);
+          ?>
           <p style="margin:0 0 8px;font-size:12px;color:var(--muted);">
-            Usa el <code>publicId</code> real de <strong>Instancias · Listar</strong> (no un ejemplo inventado).
+            <?php if ($isMessageParam): ?>
+              Usa el <code>publicId</code> del <strong>mensaje</strong> (respuesta de <code>POST /messages</code> o consulta previa), no el de instancia.
+            <?php else: ?>
+              Usa el <code>publicId</code> real de <strong>Instancias · Listar</strong> (no un ejemplo inventado).
+            <?php endif; ?>
           </p>
           <?php foreach ($currentDef['params'] as $paramKey => $paramDefault): ?>
             <label for="param_<?= h($paramKey) ?>"><?= h($paramKey) ?></label>
             <input type="text" id="param_<?= h($paramKey) ?>" name="param_<?= h($paramKey) ?>"
-                   placeholder="pega aquí el publicId de GET /instances"
+                   placeholder="<?= $isMessageParam ? 'pega el publicId del mensaje (POST /messages)' : 'pega aquí el publicId de GET /instances' ?>"
                    value="<?= h($_POST['param_' . $paramKey] ?? $paramDefault) ?>">
           <?php endforeach; ?>
         </fieldset>
