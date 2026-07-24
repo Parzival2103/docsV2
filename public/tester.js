@@ -1,17 +1,12 @@
 /**
- * tester.js — Lógica del API Tester Lebytek (browser, sin Node)
+ * tester.js — Lógica del API Tester Lebytek
  * -----------------------------------------------------------
  * Uso con la UI:
  *   1) Sirve tester.html + tester.js desde el mismo directorio
- *      (docs.lebytek.com, o cualquier host estático con CORS hacia la API).
  *   2) Abre tester.html, pega Base URL + Bearer Token y envía.
  *
- * Uso programático (sin UI) — ejemplos al final del archivo / en comentarios.
+ * Uso programático (sin UI) — ejemplos al final del archivo.
  *
- * No requiere Node ni bundler. Expone window.LebytekTester.
- *
- * Nota CORS: no abras file:// contra api.lebytek.com. Sirve desde un origen
- * permitido (p. ej. https://docs.lebytek.com o http://localhost:3000).
  */
 (function (global) {
   'use strict';
