@@ -73,7 +73,7 @@ Ejemplos de uso:
 4. Realizas peticiones HTTP para enviar mensajes.
 5. Consultas el estado de tus mensajes cuando lo necesites.
 
-> 💡 **Tip:** Si recibiste una demo, usa el **Sandbox** o el **[API Tester](/#tester)** (HTML/JS o PHP; también [descargables](/tester.html) para tu servidor).
+> 💡 **Tip:** Usa el **Sandbox** o el **[API Tester](/#tester)** para probar en vivo. Especificación OpenAPI: [openapi.yaml](/openapi/openapi.yaml) · [Postman](/openapi/postman.json).
 
 ### ¿Qué sigue?
 

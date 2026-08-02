@@ -66,11 +66,27 @@ Subir capturas a `public/assets/docs/` y referenciar en `src/data.ts`:
 
 Tras añadir imágenes: `npm run build` y redeploy.
 
-## OpenAPI interactivo
+## OpenAPI y Postman
 
-La documentación de esta SPA complementa (no reemplaza) el Scribe en:
+Artefactos Scribe publicados en este sitio (no en api.lebytek.com):
 
-https://api.lebytek.com/docs
+| Recurso | URL |
+|---------|-----|
+| OpenAPI YAML | https://docs.lebytek.com/openapi/openapi.yaml |
+| Colección Postman | https://docs.lebytek.com/openapi/postman.json |
+
+Regenerar desde el repo **WhatsApiLebytek** (monorepo local):
+
+```bash
+cd ../WhatsApiLebytek
+php artisan scribe:generate --no-interaction
+node scripts/sync-openapi-to-docs.mjs
+cd ../docsV2
+npm run build
+# deploy dist/ → VPS
+```
+
+La SPA (guías, sandbox, API Tester) es la documentación humana; OpenAPI/Postman son para herramientas.
 
 ## Sandbox demo (`/#sandbox`)
 

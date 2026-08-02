@@ -30,6 +30,7 @@ Salida: `dist/` (servir como estáticos).
 src/data.ts          Contenido markdown por sección
 src/components/      Sidebar, DocViewer (copiar código)
 public/assets/docs/  Capturas (placeholders referenciados en data.ts)
+public/openapi/      OpenAPI YAML + Postman (sync desde WhatsApiLebytek)
 ```
 
 ## Secciones (MVP API)
