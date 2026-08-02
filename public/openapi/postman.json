@@ -1,0 +1,843 @@
+{
+    "variable": [
+        {
+            "id": "baseUrl",
+            "key": "baseUrl",
+            "type": "string",
+            "name": "string",
+            "value": "http:\/\/localhost"
+        }
+    ],
+    "info": {
+        "name": "Laravel API Documentation",
+        "_postman_id": "aa3572d2-f82e-4e2a-8791-c22c248401e6",
+        "description": "WhatsApiLebytek public API v1 (nucleo skeleton).",
+        "schema": "https:\/\/schema.getpostman.com\/json\/collection\/v2.1.0\/collection.json"
+    },
+    "item": [
+        {
+            "name": "Account",
+            "description": "",
+            "item": [
+                {
+                    "name": "Account status (demo quota, plan, expiration)",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/account\/status",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/account\/status"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Returns days remaining, messages remaining, contracted plan and request timestamp."
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Admin",
+            "description": "",
+            "item": [
+                {
+                    "name": "Batch snapshot for admin demo leads (instance state + tenant activity).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/admin\/demo-leads-snapshot",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/admin\/demo-leads-snapshot"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"items\":[{\"tenantPublicId\":\"bngzmiyvdljnikhwaykcmyuwpw\",\"instancePublicId\":\"lvqwrsitcpscqldzsnrwtujwvl\"}]}"
+                        },
+                        "description": ""
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Instances",
+            "description": "",
+            "item": [
+                {
+                    "name": "List instances for the acting tenant.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/instances",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/instances"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "vary",
+                                    "value": "Origin"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Create instance (async provisioning).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/instances",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/instances"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"label\":\"b\",\"externalRef\":\"n\",\"purpose\":\"demo\"}"
+                        },
+                        "description": ""
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Show instance status.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/instances\/:instancia_public_id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/instances\/:instancia_public_id",
+                            "variable": [
+                                {
+                                    "id": "instancia_public_id",
+                                    "key": "instancia_public_id",
+                                    "value": "architecto",
+                                    "description": "The ID of the instancia public."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "vary",
+                                    "value": "Origin"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Get QR code for instance linking.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/instances\/:instancia_public_id\/qr",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/instances\/:instancia_public_id\/qr",
+                            "variable": [
+                                {
+                                    "id": "instancia_public_id",
+                                    "key": "instancia_public_id",
+                                    "value": "architecto",
+                                    "description": "The ID of the instancia public."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "vary",
+                                    "value": "Origin"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Delete instance (async teardown).",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/instances\/:instancia_public_id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/instances\/:instancia_public_id",
+                            "variable": [
+                                {
+                                    "id": "instancia_public_id",
+                                    "key": "instancia_public_id",
+                                    "value": "architecto",
+                                    "description": "The ID of the instancia public."
+                                }
+                            ]
+                        },
+                        "method": "DELETE",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Messages",
+            "description": "",
+            "item": [
+                {
+                    "name": "POST api\/v1\/messages",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/messages",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/messages"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"recipient\":\"b\",\"body\":\"n\",\"instancePublicId\":\"architecto\"}"
+                        },
+                        "description": ""
+                    },
+                    "response": []
+                },
+                {
+                    "name": "GET api\/v1\/messages\/{mensaje_public_id}",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/messages\/:mensaje_public_id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/messages\/:mensaje_public_id",
+                            "variable": [
+                                {
+                                    "id": "mensaje_public_id",
+                                    "key": "mensaje_public_id",
+                                    "value": "architecto",
+                                    "description": "The ID of the mensaje public."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "vary",
+                                    "value": "Origin"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Platform",
+            "description": "",
+            "item": [
+                {
+                    "name": "Health check",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/health",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/health"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Returns database and Redis connectivity for monitoring."
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "vary",
+                                    "value": "Origin"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Tenants",
+            "description": "",
+            "item": [
+                {
+                    "name": "List tenants",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/tenants",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/tenants"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": "Platform service only. Returns paginated tenants."
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "vary",
+                                    "value": "Origin"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Create tenant",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/tenants",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/tenants"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\":\"b\",\"slug\":\"n\",\"externalRef\":\"g\"}"
+                        },
+                        "description": "Idempotent when `externalRef` is supplied and already exists."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Show tenant",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/tenants\/:public_id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/tenants\/:public_id",
+                            "variable": [
+                                {
+                                    "id": "public_id",
+                                    "key": "public_id",
+                                    "value": "architecto",
+                                    "description": "The ID of the public."
+                                }
+                            ]
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "vary",
+                                    "value": "Origin"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                },
+                {
+                    "name": "Update tenant",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/tenants\/:public_id",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/tenants\/:public_id",
+                            "variable": [
+                                {
+                                    "id": "public_id",
+                                    "key": "public_id",
+                                    "value": "architecto",
+                                    "description": "The ID of the public."
+                                }
+                            ]
+                        },
+                        "method": "PATCH",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\":\"b\",\"isActive\":true}"
+                        },
+                        "description": ""
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Issue tenant API token",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/tenants\/:tenant_public_id\/tokens",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/tenants\/:tenant_public_id\/tokens",
+                            "variable": [
+                                {
+                                    "id": "tenant_public_id",
+                                    "key": "tenant_public_id",
+                                    "value": "architecto",
+                                    "description": "The ID of the tenant public."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"name\":\"b\",\"abilities\":[\"cuenta.ver\"]}"
+                        },
+                        "description": "Platform service only. Returns plain token once."
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Activate paid plan (platform only). Rotates tenant api-client token.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/tenants\/:tenant_public_id\/activate-plan",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/tenants\/:tenant_public_id\/activate-plan",
+                            "variable": [
+                                {
+                                    "id": "tenant_public_id",
+                                    "key": "tenant_public_id",
+                                    "value": "architecto",
+                                    "description": "The ID of the tenant public."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"planSlug\":\"starter\",\"billingCycle\":\"annual\",\"orderExternalRef\":\"b\",\"messagesMonthlyLimit\":22,\"tokenName\":\"g\"}"
+                        },
+                        "description": ""
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Soft-cancel commercial access (platform only). Revokes client tokens; keeps tenant and instances.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/tenants\/:tenant_public_id\/cancel-commercial",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/tenants\/:tenant_public_id\/cancel-commercial",
+                            "variable": [
+                                {
+                                    "id": "tenant_public_id",
+                                    "key": "tenant_public_id",
+                                    "value": "architecto",
+                                    "description": "The ID of the tenant public."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"reason\":\"b\"}"
+                        },
+                        "description": ""
+                    },
+                    "response": []
+                },
+                {
+                    "name": "Reactivate commercial access after soft-cancel (platform only). Issues a fresh client token.",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/tenants\/:tenant_public_id\/reactivate-commercial",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/tenants\/:tenant_public_id\/reactivate-commercial",
+                            "variable": [
+                                {
+                                    "id": "tenant_public_id",
+                                    "key": "tenant_public_id",
+                                    "value": "architecto",
+                                    "description": "The ID of the tenant public."
+                                }
+                            ]
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\"tokenName\":\"b\"}"
+                        },
+                        "description": ""
+                    },
+                    "response": []
+                }
+            ]
+        },
+        {
+            "name": "Usage",
+            "description": "",
+            "item": [
+                {
+                    "name": "GET api\/v1\/usage",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/usage",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/usage"
+                        },
+                        "method": "GET",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": [
+                        {
+                            "header": [
+                                {
+                                    "key": "cache-control",
+                                    "value": "no-cache, private"
+                                },
+                                {
+                                    "key": "content-type",
+                                    "value": "application\/json"
+                                },
+                                {
+                                    "key": "vary",
+                                    "value": "Origin"
+                                }
+                            ],
+                            "code": 401,
+                            "body": "{\"message\":\"Unauthenticated.\"}",
+                            "name": ""
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "name": "Webhooks",
+            "description": "\nIncoming webhook endpoint (HMAC signature or Bearer token).\n\nEvery valid event is persisted to int_webhooks before processing. The\nevent_id unique index is the deduplication authority; a collision returns\n200 {duplicate:true}. Processing happens asynchronously in ProcessWebhookJob.",
+            "item": [
+                {
+                    "name": "POST api\/v1\/webhooks\/incoming",
+                    "request": {
+                        "url": {
+                            "host": "{{baseUrl}}",
+                            "path": "api\/v1\/webhooks\/incoming",
+                            "query": [],
+                            "raw": "{{baseUrl}}\/api\/v1\/webhooks\/incoming"
+                        },
+                        "method": "POST",
+                        "header": [
+                            {
+                                "key": "Content-Type",
+                                "value": "application\/json"
+                            },
+                            {
+                                "key": "Accept",
+                                "value": "application\/json"
+                            }
+                        ],
+                        "body": null,
+                        "description": ""
+                    },
+                    "response": []
+                }
+            ]
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "Authorization",
+                "type": "string"
+            }
+        ]
+    }
+}
