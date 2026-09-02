@@ -44,6 +44,13 @@ $ENDPOINTS = [
         'body'   => null,
         'params' => [],
     ],
+    'instances_create' => [
+        'label'  => 'Instancias · Crear (Bearer cliente + cupo)',
+        'method' => 'POST',
+        'path'   => '/api/v1/instances',
+        'body'   => "{\n  \"label\": \"WhatsApp Sucursal 2\",\n  \"externalRef\": \"sandbox-opcional\",\n  \"purpose\": \"production\"\n}",
+        'params' => [],
+    ],
     'instances_show' => [
         'label'  => 'Instancias · Ver estado',
         'method' => 'GET',

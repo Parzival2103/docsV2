@@ -4,11 +4,14 @@ import {
   CheckCircle2,
   Loader2,
   MessageSquare,
+  Plus,
   QrCode,
   Shield,
   Smartphone,
 } from 'lucide-react';
 import {
+  createInstance,
+  getAccountStatus,
   getInstance,
   getMessage,
   getQr,
@@ -16,6 +19,8 @@ import {
   listInstances,
   sendMessage,
   validateToken,
+  type InstancePurpose,
+  type InstanceQuota,
   type InstanceResource,
   type MessageResource,
 } from '../../lib/lebytekApi';
@@ -24,8 +29,16 @@ import TokenPasteField from './TokenPasteField';
 const STORAGE_KEY = 'lebytek_sandbox_token_v1';
 const QR_COOLDOWN_MS = 5000;
 const DEFAULT_MESSAGE = '¡Hola! Mi primera prueba con Lebytek API 🚀';
+const QUOTA_FULL_MESSAGE =
+  'Has alcanzado el límite de instancias WhatsApp de tu plan. Mejora tu cuenta para generar otra instancia.';
 
 type Step = 'token' | 'link' | 'send' | 'done';
+
+function formatQuota(quota: InstanceQuota | null): string {
+  if (!quota) return '—';
+  const limit = quota.limit === null ? '∞' : String(quota.limit);
+  return `${quota.used} / ${limit}`;
+}
 
 function StepBadge({ n, label, active, done }: { n: number; label: string; active: boolean; done: boolean }) {
   return (
@@ -41,13 +54,19 @@ function StepBadge({ n, label, active, done }: { n: number; label: string; activ
 export default function DemoSandbox() {
   const [step, setStep] = useState<Step>('token');
   const [token, setToken] = useState(() => sessionStorage.getItem(STORAGE_KEY) ?? '');
+  const [instances, setInstances] = useState<InstanceResource[]>([]);
   const [instance, setInstance] = useState<InstanceResource | null>(null);
+  const [quota, setQuota] = useState<InstanceQuota | null>(null);
+  const [createLabel, setCreateLabel] = useState('');
+  const [createPurpose, setCreatePurpose] = useState<InstancePurpose | ''>('');
+  const [createNotice, setCreateNotice] = useState<string | null>(null);
   const [qrDataUrl, setQrDataUrl] = useState<string | null>(null);
   const [recipient, setRecipient] = useState('');
   const [messageBody, setMessageBody] = useState(DEFAULT_MESSAGE);
   const [sentMessage, setSentMessage] = useState<MessageResource | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
   const [qrLoading, setQrLoading] = useState(false);
   const [qrEpoch, setQrEpoch] = useState(0);
   const lastQrFetch = useRef(0);
@@ -63,44 +82,128 @@ export default function DemoSandbox() {
 
   const clearError = () => setError(null);
 
+  const refreshQuota = useCallback(async (safeToken: string) => {
+    try {
+      const status = await getAccountStatus(safeToken);
+      if (status.instances) {
+        setQuota(status.instances);
+      }
+    } catch (e) {
+      // cuenta.ver may be missing on older tokens — keep UI usable without quota.
+      if (!(e instanceof LebytekApiError && (e.status === 403 || e.status === 401))) {
+        console.warn('account/status unavailable', e);
+      }
+    }
+  }, []);
+
+  const selectInstance = useCallback(async (safeToken: string, publicId: string) => {
+    const fresh = await getInstance(safeToken, publicId);
+    setInstance(fresh);
+    setQrDataUrl(null);
+    hasQrRef.current = false;
+    qrRequestId.current += 1;
+    setCreateNotice(null);
+
+    if (fresh.status === 'failed') {
+      setError(
+        fresh.lastError
+          ? `La instancia falló al provisionarse: ${fresh.lastError}`
+          : 'La instancia falló al provisionarse. Contacta soporte o reintenta más tarde.',
+      );
+    } else {
+      clearError();
+    }
+  }, []);
+
   const connectWithToken = useCallback(async (rawToken: string) => {
     clearError();
+    setCreateNotice(null);
     setLoading(true);
     try {
       const safe = validateToken(rawToken);
       sessionStorage.setItem(STORAGE_KEY, safe);
       setToken(safe);
 
-      const instances = await listInstances(safe);
-      if (instances.length === 0) {
-        throw new Error('No hay instancias en tu demo. Revisa el correo o contacta soporte.');
-      }
-
-      const inst = instances[0];
-      const fresh = await getInstance(safe, inst.publicId);
-      setInstance(fresh);
+      const listed = await listInstances(safe);
+      setInstances(listed);
+      await refreshQuota(safe);
       setStep('link');
 
-      if (fresh.status === 'failed') {
-        setError(
-          fresh.lastError
-            ? `La instancia demo falló al provisionarse en Green API: ${fresh.lastError}`
-            : 'La instancia demo falló al provisionarse. Contacta soporte o reintenta más tarde.',
-        );
+      if (listed.length === 0) {
+        setInstance(null);
+        setError(null);
         return;
       }
 
-      if (fresh.status === 'authorized') {
-        setQrDataUrl(null);
-        hasQrRef.current = false;
-      }
+      await selectInstance(safe, listed[0].publicId);
     } catch (e) {
       sessionStorage.removeItem(STORAGE_KEY);
       setError(e instanceof LebytekApiError ? e.message : (e as Error).message);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [refreshQuota, selectInstance]);
+
+  const handleSelectInstance = async (publicId: string) => {
+    if (!token || !publicId || publicId === instance?.publicId) return;
+    clearError();
+    setLoading(true);
+    try {
+      await selectInstance(token, publicId);
+    } catch (e) {
+      setError(e instanceof LebytekApiError ? e.message : (e as Error).message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateInstance = async () => {
+    if (!token) return;
+    clearError();
+    setCreateNotice(null);
+    setCreating(true);
+    try {
+      const result = await createInstance(token, {
+        label: createLabel,
+        purpose: createPurpose || undefined,
+      });
+
+      const listed = await listInstances(token);
+      setInstances(listed);
+      await refreshQuota(token);
+
+      const createdId = result.data?.publicId;
+      const pickId = createdId && listed.some((i) => i.publicId === createdId)
+        ? createdId
+        : listed[listed.length - 1]?.publicId;
+
+      if (pickId) {
+        await selectInstance(token, pickId);
+      }
+
+      const statusHint = result.status === 202
+        ? 'Instancia en provisioning (202). Elige cuál vincular abajo.'
+        : 'Instancia reutilizada por idempotencia (200). No se consumió cupo extra.';
+      setCreateNotice(statusHint);
+      setCreateLabel('');
+    } catch (e) {
+      if (e instanceof LebytekApiError) {
+        if (e.status === 422) {
+          setError(e.message || QUOTA_FULL_MESSAGE);
+        } else if (e.status === 403) {
+          setError(
+            'Tu token no tiene el permiso instancias.crear. Sincroniza permisos en la API o emite un token nuevo.',
+          );
+        } else {
+          setError(e.message);
+        }
+      } else {
+        setError((e as Error).message);
+      }
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const refreshQr = useCallback(async (force = false) => {
     const currentToken = tokenRef.current;
@@ -120,6 +223,9 @@ export default function DemoSandbox() {
       if (requestId !== qrRequestId.current) return;
 
       setInstance(fresh);
+      setInstances((prev) =>
+        prev.map((item) => (item.publicId === fresh.publicId ? { ...item, ...fresh } : item)),
+      );
 
       if (fresh.status === 'authorized') {
         setQrDataUrl(null);
@@ -128,7 +234,7 @@ export default function DemoSandbox() {
         return;
       }
 
-      // force=true pide un QR nuevo a Green (evita devolver el PNG cacheado ~20s).
+      // force=true pide un QR nuevo (evita devolver el PNG cacheado ~20s).
       const qr = await getQr(currentToken, currentInstance.publicId, { force });
       if (requestId !== qrRequestId.current) return;
 
@@ -183,6 +289,9 @@ export default function DemoSandbox() {
         .then((fresh) => {
           if (cancelled) return;
           setInstance(fresh);
+          setInstances((prev) =>
+            prev.map((item) => (item.publicId === fresh.publicId ? { ...item, ...fresh } : item)),
+          );
           if (fresh.status === 'authorized') {
             setQrDataUrl(null);
             hasQrRef.current = false;
@@ -192,7 +301,7 @@ export default function DemoSandbox() {
         .catch(() => undefined);
     }, 8000);
 
-    // Green QR ~20s: forzar nuevo código antes de que expire el cacheado.
+    // QR ~20s: forzar nuevo código antes de que expire el cacheado.
     const qrInterval = window.setInterval(() => {
       if (!cancelled) void refreshQr(true);
     }, 18000);
@@ -246,26 +355,33 @@ export default function DemoSandbox() {
     sessionStorage.removeItem(STORAGE_KEY);
     qrRequestId.current += 1;
     setToken('');
+    setInstances([]);
     setInstance(null);
+    setQuota(null);
+    setCreateLabel('');
+    setCreatePurpose('');
+    setCreateNotice(null);
     setQrDataUrl(null);
     setSentMessage(null);
     setError(null);
     setStep('token');
   };
 
+  const quotaAtLimit = quota !== null && quota.limit !== null && quota.used >= quota.limit;
+
   return (
     <div className="max-w-2xl mx-auto w-full pb-16">
       <div className="mb-8">
         <div className="inline-flex items-center gap-2 rounded-full bg-indigo-50 text-indigo-700 px-3 py-1 text-xs font-semibold mb-4">
           <Shield className="w-3.5 h-3.5" />
-          Sandbox seguro — solo token demo
+          Sandbox seguro — token de cliente
         </div>
         <h1 className="text-3xl font-display font-bold text-slate-900 tracking-tight">
           Prueba tu demo en 5 minutos
         </h1>
         <p className="mt-2 text-slate-600">
           Pega el token del <strong>segundo correo</strong> (formato <code className="font-mono text-sm">15|…</code>),
-          vincula WhatsApp y envía tu primer mensaje. El token queda en esta pestaña (sessionStorage).
+          elige o crea una instancia, vincula WhatsApp y envía tu primer mensaje. El token queda en esta pestaña (sessionStorage).
         </p>
       </div>
 
@@ -283,6 +399,13 @@ export default function DemoSandbox() {
         </div>
       )}
 
+      {createNotice && !error && (
+        <div className="mb-6 flex gap-3 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-800">
+          <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
+          <p>{createNotice}</p>
+        </div>
+      )}
+
       {step === 'token' && (
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-4">
           <TokenPasteField
@@ -292,7 +415,7 @@ export default function DemoSandbox() {
             disabled={loading}
           />
           <p className="text-xs text-slate-500">
-            Permisos incluidos: instancias.ver, mensajes.enviar, mensajes.ver. No compartas este token.
+            Permisos típicos: instancias.ver, instancias.crear, mensajes.enviar, mensajes.ver, cuenta.ver. No compartas este token.
           </p>
           <button
             type="button"
@@ -306,88 +429,178 @@ export default function DemoSandbox() {
         </div>
       )}
 
-      {step === 'link' && instance && (
+      {step === 'link' && (
         <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm space-y-5">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-sm text-slate-500">Instancia demo</p>
-              <p className="font-mono text-sm">{instance.publicId}</p>
+              <p className="text-sm text-slate-500">Instancias</p>
+              <p className="text-sm font-medium text-slate-800">
+                Cupo: <span className="font-mono">{formatQuota(quota)}</span>
+                {quota?.limit === null ? <span className="text-slate-500 font-normal"> (ilimitado)</span> : null}
+              </p>
             </div>
-            <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              instance.status === 'authorized'
-                ? 'bg-emerald-100 text-emerald-800'
-                : instance.status === 'failed'
-                  ? 'bg-red-100 text-red-800'
-                  : 'bg-amber-100 text-amber-800'
-            }`}>
-              {instance.status}
-            </span>
-          </div>
-
-          {instance.status === 'failed' ? (
-            <div className="flex gap-3 items-start rounded-lg bg-red-50 border border-red-200 p-4">
-              <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
-              <div>
-                <p className="font-medium text-red-900">No se pudo crear la instancia en Green API</p>
-                <p className="text-sm text-red-800 mt-1">
-                  {instance.lastError
-                    ?? 'El proveedor devolvió un error al crear la instancia. Revisa con soporte o intenta más tarde.'}
-                </p>
-              </div>
-            </div>
-          ) : instance.status === 'authorized' ? (
-            <div className="flex gap-3 items-start rounded-lg bg-emerald-50 border border-emerald-200 p-4">
-              <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
-              <div>
-                <p className="font-medium text-emerald-900">WhatsApp vinculado</p>
-                <p className="text-sm text-emerald-800 mt-1">Ya puedes enviar tu mensaje de prueba.</p>
-              </div>
-            </div>
-          ) : (
-            <>
-              <div className="text-center space-y-3">
-                <p className="text-sm text-slate-600 flex items-center justify-center gap-2">
-                  <QrCode className="w-4 h-4" />
-                  WhatsApp → Dispositivos vinculados → Vincular dispositivo
-                </p>
-                {qrDataUrl ? (
-                  <img
-                    key={qrEpoch}
-                    src={qrDataUrl}
-                    alt="QR WhatsApp"
-                    className="mx-auto max-w-[240px] rounded-lg border border-slate-200 bg-white p-2"
-                  />
-                ) : (
-                  <div className="py-12 text-slate-400 flex justify-center">
-                    {qrLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : 'Generando QR…'}
-                  </div>
-                )}
-                <button
-                  type="button"
-                  disabled={qrLoading}
-                  onClick={() => void refreshQr(true)}
-                  className="text-sm text-indigo-600 hover:underline disabled:opacity-50"
-                >
-                  {qrLoading ? 'Actualizando…' : 'Refrescar QR'}
-                </button>
-              </div>
-            </>
-          )}
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              disabled={instance.status !== 'authorized'}
-              onClick={() => setStep('send')}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40"
-            >
-              <MessageSquare className="w-4 h-4" />
-              Enviar mensaje de prueba
-            </button>
             <button type="button" onClick={resetSandbox} className="text-sm text-slate-500 hover:text-slate-800">
               Cambiar token
             </button>
           </div>
+
+          {instances.length > 0 ? (
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-slate-700" htmlFor="instance-select">
+                Instancia a vincular
+              </label>
+              <select
+                id="instance-select"
+                className="w-full rounded-lg border border-slate-300 px-3 py-2 font-mono text-sm bg-white"
+                value={instance?.publicId ?? ''}
+                disabled={loading}
+                onChange={(e) => void handleSelectInstance(e.target.value)}
+              >
+                {instances.map((item) => (
+                  <option key={item.publicId} value={item.publicId}>
+                    {(item.label ? `${item.label} · ` : '') + item.publicId + ` (${item.status})`}
+                  </option>
+                ))}
+              </select>
+              <p className="text-xs text-slate-500">
+                <code className="font-mono">instancePublicId</code> ≠ <code className="font-mono">tenantPublicId</code>.
+                Usa el ID de instancia en envíos y rutas.
+              </p>
+            </div>
+          ) : (
+            <p className="text-sm text-slate-600">
+              No hay instancias aún. Crea una abajo (requiere permiso <code className="font-mono text-xs">instancias.crear</code>).
+            </p>
+          )}
+
+          <div className="rounded-lg border border-slate-200 bg-slate-50 p-4 space-y-3">
+            <div className="flex items-center gap-2 text-sm font-medium text-slate-800">
+              <Plus className="w-4 h-4" />
+              Crear otra instancia
+            </div>
+            <label className="block text-sm font-medium text-slate-700" htmlFor="create-label">
+              Etiqueta
+            </label>
+            <input
+              id="create-label"
+              type="text"
+              maxLength={255}
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"
+              placeholder="WhatsApp Sucursal 2"
+              value={createLabel}
+              onChange={(e) => setCreateLabel(e.target.value)}
+              disabled={creating}
+            />
+            <label className="block text-sm font-medium text-slate-700" htmlFor="create-purpose">
+              Purpose (opcional)
+            </label>
+            <select
+              id="create-purpose"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white"
+              value={createPurpose}
+              onChange={(e) => setCreatePurpose(e.target.value as InstancePurpose | '')}
+              disabled={creating}
+            >
+              <option value="">API default (según commercial_status)</option>
+              <option value="demo">demo</option>
+              <option value="production">production</option>
+            </select>
+            {quotaAtLimit ? (
+              <p className="text-xs text-amber-800 bg-amber-50 border border-amber-200 rounded-md px-3 py-2">
+                Cupo lleno ({formatQuota(quota)}). Al crear, la API responderá 422 con el mensaje de upgrade.
+              </p>
+            ) : null}
+            <button
+              type="button"
+              disabled={creating || createLabel.trim().length < 1}
+              onClick={() => void handleCreateInstance()}
+              className="inline-flex items-center gap-2 rounded-lg border border-indigo-200 bg-white px-4 py-2 text-sm font-semibold text-indigo-700 hover:bg-indigo-50 disabled:opacity-50"
+            >
+              {creating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
+              Crear instancia
+            </button>
+          </div>
+
+          {instance ? (
+            <>
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <p className="text-sm text-slate-500">Instancia seleccionada</p>
+                  <p className="font-mono text-sm">{instance.publicId}</p>
+                  {instance.label ? <p className="text-xs text-slate-500 mt-0.5">{instance.label}</p> : null}
+                </div>
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  instance.status === 'authorized'
+                    ? 'bg-emerald-100 text-emerald-800'
+                    : instance.status === 'failed'
+                      ? 'bg-red-100 text-red-800'
+                      : 'bg-amber-100 text-amber-800'
+                }`}>
+                  {instance.status}
+                </span>
+              </div>
+
+              {instance.status === 'failed' ? (
+                <div className="flex gap-3 items-start rounded-lg bg-red-50 border border-red-200 p-4">
+                  <AlertCircle className="w-5 h-5 text-red-600 shrink-0" />
+                  <div>
+                    <p className="font-medium text-red-900">No se pudo crear la instancia</p>
+                    <p className="text-sm text-red-800 mt-1">
+                      {instance.lastError
+                        ?? 'El aprovisionamiento falló. Revisa con soporte o intenta más tarde.'}
+                    </p>
+                  </div>
+                </div>
+              ) : instance.status === 'authorized' ? (
+                <div className="flex gap-3 items-start rounded-lg bg-emerald-50 border border-emerald-200 p-4">
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                  <div>
+                    <p className="font-medium text-emerald-900">WhatsApp vinculado</p>
+                    <p className="text-sm text-emerald-800 mt-1">Ya puedes enviar tu mensaje de prueba.</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center space-y-3">
+                  <p className="text-sm text-slate-600 flex items-center justify-center gap-2">
+                    <QrCode className="w-4 h-4" />
+                    WhatsApp → Dispositivos vinculados → Vincular dispositivo
+                  </p>
+                  {qrDataUrl ? (
+                    <img
+                      key={qrEpoch}
+                      src={qrDataUrl}
+                      alt="QR WhatsApp"
+                      className="mx-auto max-w-[240px] rounded-lg border border-slate-200 bg-white p-2"
+                    />
+                  ) : (
+                    <div className="py-12 text-slate-400 flex justify-center">
+                      {qrLoading ? <Loader2 className="w-8 h-8 animate-spin" /> : 'Generando QR…'}
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    disabled={qrLoading}
+                    onClick={() => void refreshQr(true)}
+                    className="text-sm text-indigo-600 hover:underline disabled:opacity-50"
+                  >
+                    {qrLoading ? 'Actualizando…' : 'Refrescar QR'}
+                  </button>
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={instance.status !== 'authorized'}
+                  onClick={() => setStep('send')}
+                  className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-indigo-700 disabled:opacity-40"
+                >
+                  <MessageSquare className="w-4 h-4" />
+                  Enviar mensaje de prueba
+                </button>
+              </div>
+            </>
+          ) : null}
         </div>
       )}
 
