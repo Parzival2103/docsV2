@@ -182,7 +182,7 @@ Abre el **[API Tester](/#tester)** en esta documentación (pestañas **HTML/JS**
 2. Súbelo a tu host o ejecuta local: \`php -S localhost:8000\`
 3. Pega Base URL + Bearer Token y elige el endpoint
 
-Cubre instancias, mensajes, cuenta y uso. Para writes, el tester genera \`Idempotency-Key\` si falta.
+Cubre instancias (listar / **crear** + cupo / QR), mensajes, cuenta (\`instances.used\`/\`limit\`) y uso. Para writes, el tester genera \`Idempotency-Key\` si falta.
 
 > El sandbox es solo para validar credenciales demo. En producción no expongas el token en frontend público.
 `

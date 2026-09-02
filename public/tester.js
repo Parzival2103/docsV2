@@ -19,7 +19,7 @@
   // -------------------------------------------------------------------
   var ENDPOINTS = {
     account_status: {
-      label: 'Cuenta · Estado (cuota, plan, expiración)',
+      label: 'Cuenta · Estado (cuota, plan, instances.used/limit)',
       method: 'POST',
       path: '/api/v1/account/status',
       body: null,
@@ -37,8 +37,10 @@
       method: 'POST',
       path: '/api/v1/instances',
       body:
-        '{\n  "label": "WhatsApp Sucursal 2",\n  "externalRef": "sandbox-opcional",\n  "purpose": "production"\n}',
+        '{\n  "label": "WhatsApp Sucursal 2",\n  "externalRef": "opcional-idempotente",\n  "purpose": "production"\n}',
       params: {},
+      bodyHint:
+        'Bearer cliente con <code>instancias.crear</code>. El tester añade <code>Idempotency-Key</code> solo. Cupo lleno → <strong>422</strong> upgrade. Replay por <code>externalRef</code> → <strong>200</strong> sin consumir cupo extra. <code>purpose</code>: demo | production (opcional).',
     },
     instances_show: {
       label: 'Instancias · Ver estado',
@@ -396,11 +398,23 @@
       if (def.body != null) {
         bodyBox.hidden = false;
         if (bodyEl) bodyEl.value = def.body;
-        bodyHint.hidden = selectedKey !== 'messages_send';
+        var hintText = def.bodyHint
+          ? def.bodyHint
+          : selectedKey === 'messages_send'
+            ? 'Completa <code>instancePublicId</code> con el de tu instancia (<strong>Instancias · Listar</strong>).'
+            : '';
+        if (hintText) {
+          bodyHint.hidden = false;
+          bodyHint.innerHTML = hintText;
+        } else {
+          bodyHint.hidden = true;
+          bodyHint.innerHTML = '';
+        }
       } else {
         bodyBox.hidden = true;
         if (bodyEl) bodyEl.value = '';
         bodyHint.hidden = true;
+        bodyHint.innerHTML = '';
       }
     }
   }
