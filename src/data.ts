@@ -100,8 +100,8 @@ El **Sandbox interactivo** de esta documentación te permite probar tu demo en ~
 
 | Paso | Qué hace | Endpoints |
 | :--- | :--- | :--- |
-| 1. Token | Valida formato, guarda en \`sessionStorage\`, lista instancias | \`GET /instances\` → \`GET /instances/{publicId}\` |
-| 2. Vincular | Si no está \`authorized\`, muestra QR y hace polling de estado | \`GET .../qr\` + refresh de instancia |
+| 1. Token | Valida formato, guarda en \`sessionStorage\`, lista instancias y cupo | \`GET /instances\` + \`POST /account/status\` |
+| 2. Vincular | Eliges instancia (o creas otra), QR y polling de estado | \`POST /instances\` · \`GET .../qr\` · refresh |
 | 3. Enviar | POST del mensaje de prueba | \`POST /messages\` (+ \`Idempotency-Key\`) |
 | 4. Listo | Muestra JSON y hace poll hasta \`sent\` o \`failed\` | \`GET /messages/{publicId}\` |
 
@@ -123,13 +123,17 @@ El **Sandbox interactivo** de esta documentación te permite probar tu demo en ~
 
 | Método | Ruta | Permiso | Notas |
 | :--- | :--- | :--- | :--- |
-| GET | \`/instances\` | \`instancias.ver\` | Valida token; toma la primera instancia |
+| GET | \`/instances\` | \`instancias.ver\` | Lista; la UI permite elegir cuál vincular |
+| POST | \`/instances\` | \`instancias.crear\` | Crear otra instancia (Bearer cliente + cupo) |
 | GET | \`/instances/{publicId}\` | \`instancias.ver\` | Estado actual |
 | GET | \`/instances/{publicId}/qr\` | \`instancias.ver\` | Solo si lista para QR; 409 si ya autorizada |
+| POST | \`/account/status\` | \`cuenta.ver\` | Contador \`instances.used\` / \`instances.limit\` |
 | POST | \`/messages\` | \`mensajes.enviar\` | Requiere instancia \`authorized\` |
 | GET | \`/messages/{publicId}\` | \`mensajes.ver\` | Poll de estado |
 
-El sandbox solo llama a rutas de instancias y mensajes (las que permite tu token).
+El sandbox solo llama a rutas allowlistadas (instances, messages, account/status) — anti-SSRF.
+
+> 🚨 **\`tenantPublicId\` ≠ \`instancePublicId\`:** el selector del sandbox usa siempre el \`publicId\` de **instancia**. DELETE de instancias sigue siendo solo plataforma (no aparece en el sandbox).
 
 ## Seguridad y límites
 
@@ -138,18 +142,20 @@ El sandbox solo llama a rutas de instancias y mensajes (las que permite tu token
 | Almacenamiento | Token solo en \`sessionStorage\` de esta pestaña (\`lebytek_sandbox_token_v1\`) |
 | Destino de llamadas | Directo a \`https://api.lebytek.com/api/v1\` (CORS); **no** pasa por docs.lebytek.com |
 | Rate limit | 60 req/min API; 10 envíos/min en \`POST /messages\` |
-| Cuota | 429 si se agota la cuota mensual del plan demo |
-| Rutas permitidas | El cliente del sandbox solo permite instances/messages (anti-SSRF) |
+| Cupo de instancias | Contador desde \`POST /account/status\` → \`instances.used\` / \`limit\`; create llena → **422** upgrade |
+| Cuota mensajes | 429 si se agota la cuota mensual del plan |
+| Rutas permitidas | Solo \`/instances\`, \`/messages\`, \`/account/status\` (anti-SSRF) |
 
 ## Errores frecuentes en el sandbox
 
 | Síntoma | Causa | Qué hacer |
 | :--- | :--- | :--- |
 | Token inválido (401) | Token incompleto o mal pegado | Pega el valor completo del correo (incluye \`id|\` si aparece) |
-| 403 | Token sin ability | Usa el token del segundo correo demo |
+| 403 al crear | Sin Spatie \`instancias.crear\` | Sincroniza permisos / emite token nuevo |
 | 409 al enviar | Instancia no \`authorized\` | Escanea QR y espera estado autorizado |
 | 409 en QR | Ya vinculada o aún no lista | Refresca estado; espera si está \`provisioning\` |
-| 422 | Falta \`Idempotency-Key\` o body inválido | En la UI no debería ocurrir; en curl añade el header |
+| 422 al crear | Cupo de instancias lleno | Mejora el plan; el mensaje viene de la API |
+| 422 genérico | Falta \`Idempotency-Key\` o body inválido | En la UI no debería ocurrir; en curl añade el header |
 | 429 | Throttle o cuota | Espera 1 min o revisa \`POST /account/status\` |
 
 ## Después del sandbox
@@ -176,7 +182,7 @@ Abre el **[API Tester](/#tester)** en esta documentación (pestañas **HTML/JS**
 2. Súbelo a tu host o ejecuta local: \`php -S localhost:8000\`
 3. Pega Base URL + Bearer Token y elige el endpoint
 
-Cubre instancias, mensajes, cuenta y uso. Para writes, el tester genera \`Idempotency-Key\` si falta.
+Cubre instancias (listar / **crear** + cupo / QR), mensajes, cuenta (\`instances.used\`/\`limit\`) y uso. Para writes, el tester genera \`Idempotency-Key\` si falta.
 
 > El sandbox es solo para validar credenciales demo. En producción no expongas el token en frontend público.
 `
@@ -226,6 +232,7 @@ Tu token de cliente permite:
 | Ruta | Permiso |
 | :--- | :--- |
 | \`GET /instances\` | \`instancias.ver\` |
+| \`POST /instances\` | \`instancias.crear\` |
 | \`GET /instances/{publicId}\` | \`instancias.ver\` |
 | \`GET /instances/{publicId}/qr\` | \`instancias.ver\` |
 | \`POST /messages\` | \`mensajes.enviar\` |
@@ -248,7 +255,7 @@ Tu token de cliente permite:
 
 ## 2. Validar tu token
 
-Los tokens de demo incluyen permisos \`instancias.ver\`, \`mensajes.enviar\`, \`mensajes.ver\` y \`cuenta.ver\`.
+Los tokens de demo incluyen permisos \`instancias.ver\`, \`instancias.crear\`, \`mensajes.enviar\`, \`mensajes.ver\` y \`cuenta.ver\`.
 
 **Opción A — listar instancias:**
 
@@ -380,11 +387,12 @@ Cada ruta exige un permiso (\`ability\`). Con tu token de cliente:
 | Permiso | Rutas |
 | :--- | :--- |
 | \`instancias.ver\` | \`GET /instances\`, \`GET /instances/{publicId}\`, \`GET .../qr\` |
+| \`instancias.crear\` | \`POST /instances\` (Bearer cliente; cupo por plan) |
 | \`mensajes.enviar\` | \`POST /messages\` |
 | \`mensajes.ver\` | \`GET /messages/{publicId}\`, \`GET /usage\` |
 | \`cuenta.ver\` | \`POST /account/status\` |
 
-Token demo típico: \`instancias.ver\`, \`mensajes.enviar\`, \`mensajes.ver\`, \`cuenta.ver\`.
+Token demo / cliente típico: \`instancias.ver\`, \`instancias.crear\`, \`mensajes.enviar\`, \`mensajes.ver\`, \`cuenta.ver\`.
 
 Sin el permiso requerido → **403**.
 
@@ -590,6 +598,66 @@ curl -X GET "https://api.lebytek.com/api/v1/instances/{publicId}/qr" \\
 - \`Instance already authorized\`
 - \`Instance not ready for QR\`
 
+## Crear instancia (Bearer cliente)
+
+**POST** \`/instances\`
+
+Permiso: \`instancias.crear\` (token **por-tenant** / Bearer cliente; también acepta token plataforma + \`X-Tenant-Id\`).
+
+**Headers:**
+
+\`\`\`http
+Authorization: Bearer {token_cliente}
+Accept: application/json
+Content-Type: application/json
+Idempotency-Key: {uuid}
+\`\`\`
+
+**Body:**
+
+\`\`\`json
+{
+  "label": "WhatsApp Sucursal 2",
+  "externalRef": "opcional-idempotente",
+  "purpose": "production"
+}
+\`\`\`
+
+| Campo | Reglas |
+| :--- | :--- |
+| \`label\` | Requerido, máx. 255 |
+| \`externalRef\` | Opcional; replay idempotente → **200** misma instancia, **sin** consumir cupo extra |
+| \`purpose\` | \`demo\` \\| \`production\`. Si se omite: \`production\` cuando \`commercial_status=active\`, si no \`demo\` |
+
+**Cupo por plan** (SoT en la API; el sandbox solo muestra \`used\`/\`limit\`):
+
+| \`planSlug\` | \`max_instances\` |
+| :--- | :--- |
+| \`demo\` | 1 |
+| \`starter\` | 1 |
+| \`business\` | 3 |
+| \`empresa\` | \`null\` (ilimitado) |
+
+**Respuestas:**
+
+| Código | Cuándo |
+| :--- | :--- |
+| \`202\` | Nueva instancia en \`provisioning\` (async) |
+| \`200\` | Replay por \`externalRef\` / idempotencia — misma instancia |
+| \`422\` | Cupo lleno → mensaje exacto: *Has alcanzado el límite de instancias WhatsApp de tu plan. Mejora tu cuenta para generar otra instancia.* |
+| \`403\` | Sin permiso Spatie \`instancias.crear\` (sincroniza permisos o emite token nuevo) |
+
+\`\`\`bash
+curl -X POST "https://api.lebytek.com/api/v1/instances" \\
+  -H "Authorization: Bearer {token_cliente}" \\
+  -H "Accept: application/json" \\
+  -H "Content-Type: application/json" \\
+  -H "Idempotency-Key: $(uuidgen)" \\
+  -d '{"label":"WhatsApp Sucursal 2","purpose":"production"}'
+\`\`\`
+
+> **DELETE** de instancias sigue siendo **solo plataforma**. El sandbox de cliente no ofrece borrado.
+
 ## Estados de instancia
 
 | \`status\` | Significado |
@@ -601,7 +669,7 @@ curl -X GET "https://api.lebytek.com/api/v1/instances/{publicId}/qr" \\
 | \`failed\` | Falló el aprovisionamiento. |
 | \`deleted\` | Instancia eliminada. |
 
-Tu token de cliente permite **listar**, **consultar** y obtener **QR**. El alta o baja de instancias las gestiona Lebytek al activar tu cuenta.
+Tu token de cliente permite **listar**, **crear** (con cupo), **consultar** y obtener **QR**. La baja de instancias la gestiona Lebytek (plataforma).
 `
   },
   "mensajes": {
@@ -825,9 +893,12 @@ curl -X POST "https://api.lebytek.com/api/v1/account/status" \\
     "messagesSentThisMonth": 0,
     "messagesRemainingThisMonth": 100,
     "messagesLimitThisMonth": 100
-  }
+  },
+  "instances": { "used": 1, "limit": 1 }
 }
 \`\`\`
+
+\`instances.limit\` puede ser \`null\` cuando el plan es ilimitado (p. ej. \`empresa\`).
 
 ## Campos clave
 
@@ -837,6 +908,7 @@ curl -X POST "https://api.lebytek.com/api/v1/account/status" \\
 | \`plan.messagesPerMonthLimit\` | Tope del plan |
 | \`demo.expiresAt\` / \`daysRemaining\` / \`isExpired\` | Vigencia de la demo |
 | \`usage.messagesRemainingThisMonth\` | Cuánto puedes enviar aún este mes |
+| \`instances.used\` / \`instances.limit\` | Cupo de instancias WhatsApp (\`limit: null\` = ilimitado) |
 
 ## Errores
 
@@ -847,9 +919,11 @@ curl -X POST "https://api.lebytek.com/api/v1/account/status" \\
 
 Cuando \`usage.messagesRemainingThisMonth\` llega a 0, \`POST /messages\` responde **429** \`Monthly message quota exceeded.\`
 
+Cuando \`instances.used >= instances.limit\` (y \`limit\` no es \`null\`), \`POST /instances\` responde **422** con el mensaje de upgrade del plan.
+
 ### Relación con GET /usage
 
-- \`POST /account/status\` → cuota del **mes** + plan + demo.
+- \`POST /account/status\` → cuota del **mes** + plan + demo + cupo de instancias.
 - \`GET /usage\` → contadores agregados del tenant (enviados/recibidos y por estado).
 `
   },
@@ -919,7 +993,7 @@ La API responde JSON en rutas \`/api/*\`. Estructura verificada en middleware, c
 | \`403\` | Sin permiso o rol | Abilities del token; tenant requerido |
 | \`404\` | Recurso no encontrado | \`publicId\` correcto; tenant del token |
 | \`409\` | Conflicto de estado | Instancia no \`authorized\`; QR no disponible |
-| \`422\` | Validación o Idempotency-Key | Campos requeridos; header idempotencia |
+| \`422\` | Validación, Idempotency-Key o cupo de instancias | Campos; header; mensaje de upgrade en \`POST /instances\` |
 | \`429\` | Rate limit o cuota mensual | Frecuencia; plan y \`POST /account/status\` |
 | \`500\` | Error interno | Reintentar; contactar soporte |
 
@@ -973,6 +1047,14 @@ La API responde JSON en rutas \`/api/*\`. Estructura verificada en middleware, c
 \`\`\`json
 {
   "message": "Idempotency-Key header is required for write operations."
+}
+\`\`\`
+
+**422 (cupo de instancias)**
+
+\`\`\`json
+{
+  "message": "Has alcanzado el límite de instancias WhatsApp de tu plan. Mejora tu cuenta para generar otra instancia."
 }
 \`\`\`
 

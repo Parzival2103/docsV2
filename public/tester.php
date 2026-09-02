@@ -31,7 +31,7 @@ session_start();
 // -------------------------------------------------------------------
 $ENDPOINTS = [
     'account_status' => [
-        'label'  => 'Cuenta · Estado (cuota, plan, expiración)',
+        'label'  => 'Cuenta · Estado (cuota, plan, instances.used/limit)',
         'method' => 'POST',
         'path'   => '/api/v1/account/status',
         'body'   => null,
@@ -43,6 +43,14 @@ $ENDPOINTS = [
         'path'   => '/api/v1/instances',
         'body'   => null,
         'params' => [],
+    ],
+    'instances_create' => [
+        'label'  => 'Instancias · Crear (Bearer cliente + cupo)',
+        'method' => 'POST',
+        'path'   => '/api/v1/instances',
+        'body'   => "{\n  \"label\": \"WhatsApp Sucursal 2\",\n  \"externalRef\": \"opcional-idempotente\",\n  \"purpose\": \"production\"\n}",
+        'params' => [],
+        'bodyHint' => 'Bearer cliente con <code>instancias.crear</code>. El tester añade <code>Idempotency-Key</code> solo. Cupo lleno → <strong>422</strong> upgrade. Replay por <code>externalRef</code> → <strong>200</strong> sin consumir cupo extra. <code>purpose</code>: demo | production (opcional).',
     ],
     'instances_show' => [
         'label'  => 'Instancias · Ver estado',
@@ -455,7 +463,7 @@ $currentDef = $ENDPOINTS[$selected] ?? reset($ENDPOINTS);
 <body>
 
 <h1>WhatsApiLebytek · API Tester</h1>
-<div class="sub">Tester de cliente Lebytek — endpoints de tenant (instancias, mensajes, cuenta, uso). Sin dependencias.</div>
+<div class="sub">Tester de cliente Lebytek — endpoints de tenant (instancias incl. crear + cupo, mensajes, cuenta, uso). Sin dependencias.</div>
 
 <form method="post" id="testerForm">
 <div class="layout">
@@ -519,7 +527,11 @@ $currentDef = $ENDPOINTS[$selected] ?? reset($ENDPOINTS);
 
       <?php if ($currentDef['body'] !== null): ?>
         <label for="body">Body (JSON)</label>
-        <?php if ($selected === 'messages_send'): ?>
+        <?php if (!empty($currentDef['bodyHint'])): ?>
+          <p style="margin:0 0 6px;font-size:12px;color:var(--muted);">
+            <?= $currentDef['bodyHint'] ?>
+          </p>
+        <?php elseif ($selected === 'messages_send'): ?>
           <p style="margin:0 0 6px;font-size:12px;color:var(--muted);">
             Completa <code>instancePublicId</code> con el de tu instancia (<strong>Instancias · Listar</strong>).
           </p>

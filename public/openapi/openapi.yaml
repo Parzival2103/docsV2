@@ -45,11 +45,16 @@ paths:
     post:
       summary: 'Account status (demo quota, plan, expiration)'
       operationId: accountStatusdemoQuotaPlanExpiration
-      description: 'Returns days remaining, messages remaining, contracted plan and request timestamp.'
+      description: |
+        Returns days remaining, messages remaining, contracted plan, request timestamp,
+        and instance quota as `instances.used` / `instances.limit` (`limit` may be null when unlimited).
+        Client Bearer with `cuenta.ver`.
       parameters: []
       responses: {  }
       tags:
         - Account
+      security:
+        - default: []
   /api/v1/admin/demo-leads-snapshot:
     post:
       summary: 'Batch snapshot for admin demo leads (instance state + tenant activity).'
@@ -111,11 +116,42 @@ paths:
     post:
       summary: 'Create instance (async provisioning).'
       operationId: createInstanceasyncProvisioning
-      description: ''
+      description: |
+        Create a WhatsApp instance for the acting tenant (async provisioning).
+
+        **Auth:** client Bearer with Spatie permission `instancias.crear` (no `X-Tenant-Id`),
+        or platform Bearer + `X-Tenant-Id`.
+
+        **Idempotency-Key:** required. Replay by `externalRef` returns 200 with the same instance
+        and does not consume extra quota.
+
+        **Quota (`max_instances`):** demo/starter=1, business=3, empresa=null (unlimited).
+        When full → **422** with message:
+        "Has alcanzado el límite de instancias WhatsApp de tu plan. Mejora tu cuenta para generar otra instancia."
+
+        Responses: **202** new provisioning instance; **200** idempotent replay; **403** missing permission.
       parameters: []
-      responses: {  }
+      responses:
+        200:
+          description: 'Idempotent replay — existing instance (no extra quota).'
+        202:
+          description: 'Accepted — instance provisioning asynchronously.'
+        403:
+          description: 'Missing instancias.crear permission.'
+        422:
+          description: 'Instance quota exceeded (upgrade required) or validation error.'
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: 'Has alcanzado el límite de instancias WhatsApp de tu plan. Mejora tu cuenta para generar otra instancia.'
       tags:
         - Instances
+      security:
+        - default: []
       requestBody:
         required: true
         content:
@@ -126,16 +162,16 @@ paths:
                 label:
                   type: string
                   description: 'Must not be greater than 255 characters.'
-                  example: b
+                  example: 'WhatsApp Sucursal 2'
                 externalRef:
                   type: string
-                  description: 'Must not be greater than 255 characters.'
-                  example: 'n'
+                  description: 'Optional idempotent key. Must not be greater than 255 characters.'
+                  example: 'opcional-idempotente'
                   nullable: true
                 purpose:
                   type: string
-                  description: ''
-                  example: demo
+                  description: 'demo | production. If omitted: production when commercial_status=active, else demo.'
+                  example: production
                   enum:
                     - demo
                     - production

@@ -6,11 +6,13 @@
 const API_BASE = (import.meta.env.VITE_LEBYTEK_API_URL as string | undefined)?.replace(/\/$/, '')
   ?? 'https://api.lebytek.com/api/v1';
 
-const ALLOWED_PATH = /^\/(instances(\/[0-9A-HJKMNP-TV-Z]{26})?(\/qr)?|messages(\/[0-9A-HJKMNP-TV-Z]{26})?)$/i;
+/** Strict allowlist: instances (+id/qr), messages (+id), account/status. */
+const ALLOWED_PATH = /^\/(instances(\/[0-9A-HJKMNP-TV-Z]{26})?(\/qr)?|messages(\/[0-9A-HJKMNP-TV-Z]{26})?|account\/status)$/i;
 
 const TOKEN_MIN = 32;
 const TOKEN_MAX = 256;
 const BODY_MAX = 1000;
+const LABEL_MAX = 255;
 const PHONE_MIN = 10;
 const PHONE_MAX = 15;
 const RECIPIENT_MAX = 48;
@@ -132,6 +134,7 @@ export interface InstanceResource {
   publicId: string;
   status: string;
   label?: string;
+  purpose?: string;
   lastError?: string | null;
   greenState?: string | null;
 }
@@ -148,6 +151,41 @@ export interface MessageResource {
   body: string;
   error?: string | null;
   sentAt?: string | null;
+}
+
+export interface InstanceQuota {
+  used: number;
+  limit: number | null;
+}
+
+export interface AccountStatus {
+  requestedAt?: string;
+  commercialStatus?: string;
+  plan?: {
+    slug?: string;
+    name?: string;
+    messagesPerMonthLimit?: number | null;
+  };
+  demo?: {
+    startedAt?: string | null;
+    expiresAt?: string | null;
+    daysRemaining?: number | null;
+    isExpired?: boolean;
+  };
+  usage?: {
+    messagesSentThisMonth?: number;
+    messagesRemainingThisMonth?: number | null;
+    messagesLimitThisMonth?: number | null;
+  };
+  instances?: InstanceQuota;
+}
+
+export type InstancePurpose = 'demo' | 'production';
+
+export interface CreateInstanceInput {
+  label: string;
+  externalRef?: string;
+  purpose?: InstancePurpose;
 }
 
 export async function listInstances(token: string): Promise<InstanceResource[]> {
@@ -170,6 +208,35 @@ export async function getQr(
   return data;
 }
 
+export async function createInstance(
+  token: string,
+  input: CreateInstanceInput,
+): Promise<{ status: number; data: InstanceResource }> {
+  const label = input.label.trim();
+  if (label.length < 1 || label.length > LABEL_MAX) {
+    throw new Error(`La etiqueta debe tener 1–${LABEL_MAX} caracteres.`);
+  }
+
+  const body: Record<string, string> = { label };
+  const externalRef = input.externalRef?.trim();
+  if (externalRef) {
+    if (externalRef.length > LABEL_MAX) {
+      throw new Error(`externalRef no puede superar ${LABEL_MAX} caracteres.`);
+    }
+    body.externalRef = externalRef;
+  }
+  if (input.purpose === 'demo' || input.purpose === 'production') {
+    body.purpose = input.purpose;
+  }
+
+  return lebytekFetch<InstanceResource>(token, 'POST', '/instances', body, { idempotent: true });
+}
+
+export async function getAccountStatus(token: string): Promise<AccountStatus> {
+  const { data } = await lebytekFetch<AccountStatus>(token, 'POST', '/account/status');
+  return data;
+}
+
 export async function sendMessage(
   token: string,
   instancePublicId: string,
@@ -187,6 +254,11 @@ export async function sendMessage(
 export async function getMessage(token: string, publicId: string): Promise<MessageResource> {
   const { data } = await lebytekFetch<MessageResource>(token, 'GET', `/messages/${publicId}`);
   return data;
+}
+
+/** Exported for unit-style checks of the anti-SSRF allowlist (same regex as fetch). */
+export function isAllowedSandboxPath(path: string): boolean {
+  return ALLOWED_PATH.test(path.split('?')[0]);
 }
 
 export { API_BASE };
