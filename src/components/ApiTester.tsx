@@ -3,13 +3,18 @@ import { Download, ExternalLink } from 'lucide-react';
 
 type TesterTab = 'html' | 'php';
 
+/** Bump when public/tester.html or public/tester.js change (iframe + download cache). */
+const TESTER_HTML_JS_VERSION = '20260903-instances-create';
+
 /**
  * Embeds standalone API testers inside the docs chrome.
  * HTML/JS works on any static host (Vite / docs). PHP needs PHP-FPM on the docs host.
  */
 export default function ApiTester() {
   const [tab, setTab] = useState<TesterTab>('html');
-  const iframeSrc = tab === 'html' ? '/tester.html' : '/tester.php';
+  const htmlHref = `/tester.html?v=${TESTER_HTML_JS_VERSION}`;
+  const jsHref = `/tester.js?v=${TESTER_HTML_JS_VERSION}`;
+  const iframeSrc = tab === 'html' ? htmlHref : '/tester.php';
 
   return (
     <div className="flex flex-col h-[calc(100vh-8rem)] min-h-[640px] -m-4 sm:-m-8 lg:-m-12">
@@ -24,7 +29,7 @@ export default function ApiTester() {
           {tab === 'html' ? (
             <>
               <a
-                href="/tester.html"
+                href={htmlHref}
                 download="tester.html"
                 className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
               >
@@ -32,7 +37,7 @@ export default function ApiTester() {
                 Descargar tester.html
               </a>
               <a
-                href="/tester.js"
+                href={jsHref}
                 download="tester.js"
                 className="inline-flex items-center gap-1.5 rounded-md border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 hover:bg-slate-50"
               >
@@ -87,7 +92,7 @@ export default function ApiTester() {
       </div>
 
       <iframe
-        key={tab}
+        key={iframeSrc}
         title={tab === 'html' ? 'WhatsApiLebytek API Tester HTML/JS' : 'WhatsApiLebytek API Tester PHP'}
         src={iframeSrc}
         className="flex-1 w-full border-0 bg-[#0f1115]"

@@ -19,7 +19,16 @@ run_deploy() {
   npm ci
   npm run build
   rsync -a --delete dist/ "${HTDOCS}/"
+  # Sanity: HTML/JS tester must ship create-instance preset (avoid stale browser cache of tester.js).
+  if ! grep -q "instances_create" "${HTDOCS}/tester.js"; then
+    echo "ERROR: ${HTDOCS}/tester.js missing instances_create after deploy" >&2
+    exit 1
+  fi
+  if ! grep -q "tester.js?v=" "${HTDOCS}/tester.html"; then
+    echo "WARN: ${HTDOCS}/tester.html missing tester.js cache-bust query" >&2
+  fi
   echo "Deploy OK → https://docs.lebytek.com"
+  echo "HTML/JS: open /#tester (hard refresh) or /tester.html — dropdown must include Instancias · Crear"
 }
 
 if [[ "$(id -un)" == "${DOCS_USER}" ]]; then
