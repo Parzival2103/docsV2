@@ -7,6 +7,8 @@
  *
  * Uso programático (sin UI) — ejemplos al final del archivo.
  *
+ * Cache-bust: si cambias ENDPOINTS, sube el ?v= en tester.html
+ * (hoy: 20260903-instances-create).
  */
 (function (global) {
   'use strict';
